@@ -53,4 +53,6 @@ int main( int argc, char ** argv ) {
       printf("Label: %s, status %d \n", html_labels[ i ], st );
       i++;
    }
+
+   return 0;
 }

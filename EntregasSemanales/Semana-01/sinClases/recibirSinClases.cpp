@@ -43,4 +43,5 @@ int main( int argc, char ** argv ) {
 
    msgctl( id, IPC_RMID, NULL );
 
+   return 0;
 }
