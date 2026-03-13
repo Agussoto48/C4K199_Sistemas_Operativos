@@ -12,7 +12,7 @@
 #include<stdexcept>
 #include<cstring>
 
-#define KEY 0xA12345
+#define KEY 0xC4E199
 class Buzon {
 private:
     int id;		

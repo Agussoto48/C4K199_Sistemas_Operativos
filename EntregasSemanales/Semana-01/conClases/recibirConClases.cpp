@@ -29,4 +29,6 @@ int main( int argc, char ** argv ) {
       printf("Label: %s, times %d \n", A.mtext, A.times);
       st = m.Recibir( (void *)  &A, sizeof(A) ,2026 );
    }
+
+   return 0;
 }
