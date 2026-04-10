@@ -22,6 +22,7 @@ struct Mensaje_evento
     long mtype;
     int carros_fila;
     int carros_totales;
+    int idFila;
 };
 
 
