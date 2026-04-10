@@ -12,6 +12,12 @@
 #include <stdexcept>
 #include <cstring>
 
+#define ROJO   "\033[31m"
+#define VERDE  "\033[32m"
+#define AZUL   "\033[34m"
+#define AMARILLO "\033[33m"
+#define RESET  "\033[0m"
+
 struct Mensaje_carro
 {
     long mtype;

@@ -18,7 +18,7 @@ public:
 
     void entrar()
     {
-        std::cout << "Carro " << id << " entra a calle " << calleId << std::endl;
+        std::cout << AMARILLO << "Carro " << id << " entra a calle " << calleId << RESET << std::endl;
     }
     void esperar()
     {
@@ -28,6 +28,6 @@ public:
     }
     void salir()
     {
-        std::cout << "Carro " << id << " entra a rotonda de calle " << calleId << ", termina" << std::endl;
+        std::cout << VERDE << "Carro " << id << " entra a rotonda de calle " << calleId << ", termina" << RESET << std::endl;
     }
 };

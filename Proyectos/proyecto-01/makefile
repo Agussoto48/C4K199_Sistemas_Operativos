@@ -17,7 +17,7 @@ build: | $(BIN_DIR)
 	$(CXX) $(CXXFLAGS) $(SRC) -o $(EXE)
 
 run:
-	@$(EXE)
+	@$(EXE) $(ARGS)
 
 clean:
 	@rm -rf $(BIN_DIR)
