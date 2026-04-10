@@ -1,5 +1,5 @@
 #include "Buzon.hpp"
-#include<iostream>
+#include <iostream>
 
 class Carro
 {
@@ -8,26 +8,28 @@ private:
     int id;
     int calleId;
     Buzon buzon;
+
 public:
-    Carro(int key, int id , int calleId)
-    : key(key), id(id) , calleId(calleId), buzon(key, false)
-    {
-
-    }
-    ~Carro() = default;
-
-    void entrar()
-    {
-        std::cout << AMARILLO << "Carro " << id << " entra a calle " << calleId << RESET << std::endl;
-    }
-    void esperar()
-    {
-        Mensaje_carro msg;
-        msg.mtype = 1;
-        buzon.Recibir((void *) &msg, sizeof(msg));
-    }
-    void salir()
-    {
-        std::cout << VERDE << "Carro " << id << " entra a rotonda de calle " << calleId << ", termina" << RESET << std::endl;
-    }
+    /**
+     * @brief Constructor de Carro
+     *
+     * @param key Llave del buzón que usará el carro.
+     * @param id Identificador del carro.
+     * @param calleId Calle o fila a la que pertenece el carro.
+     */
+    Carro(int key, int id, int calleId);
+    // Destructor
+    ~Carro();
+    /**
+     * @brief Simula la llegada del carro a una calle.
+     */
+    void entrar();
+    /**
+     * @brief Espera autorización para avanzar.
+     */
+    void esperar();
+    /**
+     * @brief Simula la salida de la calle hacia la rotonda.
+     */
+    void salir();
 };
