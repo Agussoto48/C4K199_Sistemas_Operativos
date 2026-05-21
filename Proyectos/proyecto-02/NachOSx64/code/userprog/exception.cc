@@ -23,11 +23,15 @@
 //
 // Copyright (c) -2025 Universidad de Costa Rica
 
+#include <stdio.h>
 #include "copyright.h"
 #include "system.h"
 #include "syscall.h"
+#include "NachosOpenFilesTable.h"
 
 #define SC_NachOS 015177
+
+NachosOpenFilesTable *openFilesTable = new NachosOpenFilesTable();
 
 /*
  *  System call interface: Halt()
@@ -45,7 +49,8 @@ void NachOS_Halt()
 void NachOS_Exit()
 { // System call 1
 
-   DEBUG('u', "Exit system call\n");
+   int status = machine->ReadRegister(4);
+   DEBUG('u', "Exit system call %d\n", status);
 
    // Libera el espacio de direcciones del proceso actual.
    if (currentThread->space != NULL)
@@ -77,6 +82,29 @@ void NachOS_Join()
  */
 void NachOS_Create()
 { // System call 4
+   int userAddress = machine->ReadRegister(4);
+
+   char filename[256];
+   int value;
+   int i = 0;
+
+   // Lee nombre del archivo, desde mem de user
+   do
+   {
+      machine->ReadMem(userAddress + i, 1, &value);
+      filename[i] = (char)value;
+      i++;
+   } while (filename[i - 1] != '\0' && i < 255);
+
+   FILE *file = fopen(filename, "w");
+   if (file == NULL)
+   {
+      machine->WriteRegister(2, -1);
+      return;
+   }
+
+   fclose(file);
+   machine->WriteRegister(2, 1);
 }
 
 /*
@@ -84,6 +112,38 @@ void NachOS_Create()
  */
 void NachOS_Open()
 { // System call 5
+   int addr = machine->ReadRegister(4);
+
+   char filename[256];
+   int value;
+   int i = 0;
+
+   do
+   {
+      if (!machine->ReadMem(addr + i, 1, &value))
+      {
+         machine->WriteRegister(2, -1);
+         return;
+      }
+
+      filename[i] = (char)value;
+      i++;
+
+   } while (filename[i - 1] != '\0' && i < 255);
+
+   filename[255] = '\0';
+
+   FILE *openedFile = fopen(filename, "r+");
+
+   if (openedFile == NULL)
+   {
+      machine->WriteRegister(2, -1);
+      return;
+   }
+
+   int fileId = openFilesTable->Open(openedFile);
+
+   machine->WriteRegister(2, fileId);
 }
 
 /*
@@ -91,6 +151,61 @@ void NachOS_Open()
  */
 void NachOS_Read()
 { // System call 6
+   int addr = machine->ReadRegister(4);
+   int size = machine->ReadRegister(5);
+   int file = machine->ReadRegister(6);
+
+   // Tamaño invalido
+   if (size < 0)
+   {
+      machine->WriteRegister(2, -1);
+      return;
+   }
+
+   char *buffer = new char[size];
+
+   int bytesRead = 0;
+
+   if (file == ConsoleInput)
+   {
+      for (int i = 0; i < size; i++)
+      {
+         int c = getchar();
+
+         if (c == EOF)
+            break;
+
+         buffer[i] = (char)c;
+         bytesRead++;
+      }
+   }
+   else
+   {
+      FILE *openedFile = openFilesTable->GetFile(file);
+
+      if (openedFile == NULL)
+      {
+         delete[] buffer;
+         machine->WriteRegister(2, -1);
+         return;
+      }
+
+      bytesRead = fread(buffer, 1, size, openedFile);
+   }
+
+   for (int i = 0; i < bytesRead; i++)
+   {
+      if (!machine->WriteMem(addr + i, 1, buffer[i]))
+      {
+         delete[] buffer;
+         machine->WriteRegister(2, -1);
+         return;
+      }
+   }
+
+   delete[] buffer;
+
+   machine->WriteRegister(2, bytesRead);
 }
 
 /*
@@ -102,23 +217,73 @@ void NachOS_Write()
    int size = machine->ReadRegister(5); // Cantidad de bytes a escribir
    int file = machine->ReadRegister(6); // Archivo destino
 
-   int value;
-
-   // Solo maneja salida estándar y salida de error.
-   if (file == ConsoleOutput || file == ConsoleError)
+   // Tamaño invalido, devuelve error
+   if (size < 0)
    {
-      for (int i = 0; i < size; i++)
-      {
-         machine->ReadMem(addr + i, 1, &value);
-         printf("%c", (char)value);
-      }
+      machine->WriteRegister(2, -1);
+      return;
    }
+
+   char *buffer = new char[size + 1];
+
+   for (int i = 0; i < size; i++)
+   {
+      int value;
+      // Algun error al leer
+      if (!machine->ReadMem(addr + i, 1, &value))
+      {
+         delete[] buffer;
+         machine->WriteRegister(2, -1);
+         return;
+      }
+
+      buffer[i] = (char)value;
+   }
+
+   buffer[size] = '\0';
+
+   switch (file)
+   {
+   case ConsoleInput:
+      machine->WriteRegister(2, -1);
+      break;
+
+   case ConsoleOutput:
+      printf("%s", buffer);
+      machine->WriteRegister(2, size);
+      break;
+
+   case ConsoleError:
+      printf("%d\n", machine->ReadRegister(4));
+      machine->WriteRegister(2, size);
+      break;
+
+   default:
+      FILE *openedFile = openFilesTable->GetFile(file);
+
+      if (openedFile == NULL)
+      {
+         machine->WriteRegister(2, -1);
+         break;
+      }
+
+      int written = fwrite(buffer, 1, size, openedFile);
+      machine->WriteRegister(2, written);
+      break;
+   }
+
+   delete[] buffer;
 }
 /*
  *  System call interface: void Close( OpenFileId )
  */
 void NachOS_Close()
 { // System call 8
+   int file = machine->ReadRegister(4);
+
+   int result = openFilesTable->Close(file);
+
+   machine->WriteRegister(2, result);
 }
 
 /*
@@ -133,6 +298,7 @@ void NachOS_Fork()
  */
 void NachOS_Yield()
 { // System call 10
+   currentThread->Yield();
 }
 
 /*
@@ -272,14 +438,14 @@ void NachOS_Shutdown()
 // Esto evita que NachOS vuelva a ejecutar la misma instrucción de syscall.
 static void AdvancePC()
 {
-    // Guarda la instrucción actual como la anterior.
-    machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
+   // Guarda la instrucción actual como la anterior.
+   machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
 
-    // Avanza el PC a la siguiente instrucción.
-    machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
+   // Avanza el PC a la siguiente instrucción.
+   machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
 
-    // Prepara el siguiente PC, avanzando 4 bytes.
-    machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg) + 4);
+   // Prepara el siguiente PC, avanzando 4 bytes.
+   machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg) + 4);
 }
 //----------------------------------------------------------------------
 // ExceptionHandler
