@@ -21,8 +21,6 @@
 #include "noff.h"
 #include "bitmap.h"
 
-static BitMap *memoryMap = NULL;
-
 //----------------------------------------------------------------------
 // SwapHeader
 // 	Do little endian to big endian conversion on the bytes in the
@@ -104,18 +102,6 @@ AddrSpace::AddrSpace(OpenFile *executable)
     NoffHeader noffH;
     unsigned int i, size;
 
-    if (memoryMap == NULL)
-    {
-        memoryMap = new BitMap(NumPhysPages);
-
-        // Ocupamos paginas para ver si la asignacion está bien
-        memoryMap->Mark(0);
-        memoryMap->Mark(2);
-        memoryMap->Mark(4);
-        memoryMap->Mark(6);
-        memoryMap->Mark(8);
-        memoryMap->Mark(10);
-    }
     executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
 
     if ((noffH.noffMagic != NOFFMAGIC) && (WordToHost(noffH.noffMagic) == NOFFMAGIC))
@@ -182,8 +168,7 @@ AddrSpace::~AddrSpace()
     // Libera las páginas físicas asignadas a este proceso.
     for (unsigned int i = 0; i < numPages; i++)
     {
-        int physicalPage = pageTable[i].physicalPage;
-        memoryMap->Clear(physicalPage);
+        memoryMap->Clear(pageTable[i].physicalPage);
     }
     delete[] this->pageTable;
 }

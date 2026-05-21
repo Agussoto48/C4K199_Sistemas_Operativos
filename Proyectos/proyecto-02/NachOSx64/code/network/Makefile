@@ -90,9 +90,10 @@ main.o: ../threads/main.cc /usr/include/stdc-predef.h \
  ../machine/disk.h ../userprog/addrspace.h ../filesys/filesys.h \
  ../filesys/openfile.h ../threads/scheduler.h ../threads/list.h \
  ../machine/interrupt.h ../threads/list.h ../machine/stats.h \
- ../machine/timer.h ../filesys/synchdisk.h ../machine/disk.h \
- ../threads/synch.h ../network/post.h ../machine/network.h \
- ../threads/synchlist.h ../threads/synch.h
+ ../machine/timer.h ../userprog/bitmap.h ../filesys/openfile.h \
+ ../filesys/synchdisk.h ../machine/disk.h ../threads/synch.h \
+ ../network/post.h ../machine/network.h ../threads/synchlist.h \
+ ../threads/synch.h
 scheduler.o: ../threads/scheduler.cc /usr/include/stdc-predef.h \
  ../threads/copyright.h ../threads/scheduler.h ../threads/list.h \
  ../threads/utility.h ../machine/sysdep.h ../threads/copyright.h \
@@ -156,9 +157,10 @@ scheduler.o: ../threads/scheduler.cc /usr/include/stdc-predef.h \
  ../threads/utility.h ../machine/translate.h ../machine/disk.h \
  ../userprog/addrspace.h ../filesys/filesys.h ../filesys/openfile.h \
  ../threads/system.h ../machine/interrupt.h ../threads/list.h \
- ../machine/stats.h ../machine/timer.h ../filesys/synchdisk.h \
- ../machine/disk.h ../threads/synch.h ../network/post.h \
- ../machine/network.h ../threads/synchlist.h ../threads/synch.h
+ ../machine/stats.h ../machine/timer.h ../userprog/bitmap.h \
+ ../filesys/openfile.h ../filesys/synchdisk.h ../machine/disk.h \
+ ../threads/synch.h ../network/post.h ../machine/network.h \
+ ../threads/synchlist.h ../threads/synch.h
 synch.o: ../threads/synch.cc /usr/include/stdc-predef.h \
  ../threads/copyright.h ../threads/synch.h ../threads/thread.h \
  ../threads/utility.h ../machine/sysdep.h ../threads/copyright.h \
@@ -223,8 +225,9 @@ synch.o: ../threads/synch.cc /usr/include/stdc-predef.h \
  ../filesys/filesys.h ../filesys/openfile.h ../threads/list.h \
  ../threads/system.h ../threads/scheduler.h ../machine/interrupt.h \
  ../threads/list.h ../machine/stats.h ../machine/timer.h \
- ../filesys/synchdisk.h ../machine/disk.h ../threads/synch.h \
- ../network/post.h ../machine/network.h ../threads/synchlist.h
+ ../userprog/bitmap.h ../filesys/openfile.h ../filesys/synchdisk.h \
+ ../machine/disk.h ../threads/synch.h ../network/post.h \
+ ../machine/network.h ../threads/synchlist.h
 system.o: ../threads/system.cc /usr/include/stdc-predef.h \
  ../threads/copyright.h ../threads/system.h ../threads/utility.h \
  ../machine/sysdep.h ../threads/copyright.h /usr/include/c++/13/stdlib.h \
@@ -289,9 +292,10 @@ system.o: ../threads/system.cc /usr/include/stdc-predef.h \
  ../userprog/addrspace.h ../filesys/filesys.h ../filesys/openfile.h \
  ../threads/scheduler.h ../threads/list.h ../machine/interrupt.h \
  ../threads/list.h ../machine/stats.h ../machine/timer.h \
- ../filesys/synchdisk.h ../machine/disk.h ../threads/synch.h \
- ../network/post.h ../machine/network.h ../threads/synchlist.h \
- ../threads/synch.h ../threads/preemptive.h
+ ../userprog/bitmap.h ../filesys/openfile.h ../filesys/synchdisk.h \
+ ../machine/disk.h ../threads/synch.h ../network/post.h \
+ ../machine/network.h ../threads/synchlist.h ../threads/synch.h \
+ ../threads/preemptive.h
 thread.o: ../threads/thread.cc /usr/include/stdc-predef.h \
  ../threads/copyright.h ../threads/thread.h ../threads/utility.h \
  ../machine/sysdep.h ../threads/copyright.h /usr/include/c++/13/stdlib.h \
@@ -356,9 +360,10 @@ thread.o: ../threads/thread.cc /usr/include/stdc-predef.h \
  ../filesys/filesys.h ../filesys/openfile.h ../threads/switch.h \
  ../threads/synch.h ../threads/list.h ../threads/system.h \
  ../threads/scheduler.h ../machine/interrupt.h ../threads/list.h \
- ../machine/stats.h ../machine/timer.h ../filesys/synchdisk.h \
- ../machine/disk.h ../threads/synch.h ../network/post.h \
- ../machine/network.h ../threads/synchlist.h
+ ../machine/stats.h ../machine/timer.h ../userprog/bitmap.h \
+ ../filesys/openfile.h ../filesys/synchdisk.h ../machine/disk.h \
+ ../threads/synch.h ../network/post.h ../machine/network.h \
+ ../threads/synchlist.h
 utility.o: ../threads/utility.cc /usr/include/stdc-predef.h \
  ../threads/copyright.h ../threads/utility.h ../machine/sysdep.h \
  ../threads/copyright.h /usr/include/c++/13/stdlib.h \
@@ -491,9 +496,10 @@ threadtest.o: ../threads/threadtest.cc /usr/include/stdc-predef.h \
  ../userprog/addrspace.h ../filesys/filesys.h ../filesys/openfile.h \
  ../threads/scheduler.h ../threads/list.h ../machine/interrupt.h \
  ../threads/list.h ../machine/stats.h ../machine/timer.h \
- ../filesys/synchdisk.h ../machine/disk.h ../threads/synch.h \
- ../network/post.h ../machine/network.h ../threads/synchlist.h \
- ../threads/synch.h ../threads/diningph.h ../threads/agua.h
+ ../userprog/bitmap.h ../filesys/openfile.h ../filesys/synchdisk.h \
+ ../machine/disk.h ../threads/synch.h ../network/post.h \
+ ../machine/network.h ../threads/synchlist.h ../threads/synch.h \
+ ../threads/diningph.h ../threads/agua.h
 diningph.o: ../threads/diningph.cc /usr/include/stdc-predef.h \
  ../threads/diningph.h ../threads/synch.h ../threads/copyright.h \
  ../threads/thread.h ../threads/utility.h ../machine/sysdep.h \
@@ -621,9 +627,9 @@ interrupt.o: ../machine/interrupt.cc /usr/include/stdc-predef.h \
  ../machine/disk.h ../userprog/addrspace.h ../filesys/filesys.h \
  ../filesys/openfile.h ../threads/scheduler.h ../threads/list.h \
  ../machine/interrupt.h ../machine/stats.h ../machine/timer.h \
- ../filesys/synchdisk.h ../machine/disk.h ../threads/synch.h \
- ../network/post.h ../machine/network.h ../threads/synchlist.h \
- ../threads/synch.h
+ ../userprog/bitmap.h ../filesys/openfile.h ../filesys/synchdisk.h \
+ ../machine/disk.h ../threads/synch.h ../network/post.h \
+ ../machine/network.h ../threads/synchlist.h ../threads/synch.h
 sysdep.o: ../machine/sysdep.cc /usr/include/stdc-predef.h \
  ../threads/copyright.h /usr/include/stdio.h \
  /usr/include/x86_64-linux-gnu/bits/libc-header-start.h \
@@ -749,9 +755,9 @@ sysdep.o: ../machine/sysdep.cc /usr/include/stdc-predef.h \
  ../machine/disk.h ../userprog/addrspace.h ../filesys/filesys.h \
  ../filesys/openfile.h ../threads/scheduler.h ../threads/list.h \
  ../machine/interrupt.h ../machine/stats.h ../machine/timer.h \
- ../filesys/synchdisk.h ../machine/disk.h ../threads/synch.h \
- ../network/post.h ../machine/network.h ../threads/synchlist.h \
- ../threads/synch.h
+ ../userprog/bitmap.h ../filesys/openfile.h ../filesys/synchdisk.h \
+ ../machine/disk.h ../threads/synch.h ../network/post.h \
+ ../machine/network.h ../threads/synchlist.h ../threads/synch.h
 stats.o: ../machine/stats.cc /usr/include/stdc-predef.h \
  ../threads/copyright.h ../threads/utility.h ../threads/copyright.h \
  ../machine/sysdep.h /usr/include/c++/13/stdlib.h \
@@ -876,9 +882,10 @@ timer.o: ../machine/timer.cc /usr/include/stdc-predef.h \
  ../machine/disk.h ../userprog/addrspace.h ../filesys/filesys.h \
  ../filesys/openfile.h ../threads/scheduler.h ../threads/list.h \
  ../machine/interrupt.h ../threads/list.h ../machine/stats.h \
- ../machine/timer.h ../filesys/synchdisk.h ../machine/disk.h \
- ../threads/synch.h ../network/post.h ../machine/network.h \
- ../threads/synchlist.h ../threads/synch.h
+ ../machine/timer.h ../userprog/bitmap.h ../filesys/openfile.h \
+ ../filesys/synchdisk.h ../machine/disk.h ../threads/synch.h \
+ ../network/post.h ../machine/network.h ../threads/synchlist.h \
+ ../threads/synch.h
 preemptive.o: ../threads/preemptive.cc /usr/include/stdc-predef.h \
  ../threads/preemptive.h ../threads/system.h ../threads/copyright.h \
  ../threads/utility.h ../machine/sysdep.h ../threads/copyright.h \
@@ -943,10 +950,10 @@ preemptive.o: ../threads/preemptive.cc /usr/include/stdc-predef.h \
  ../userprog/addrspace.h ../filesys/filesys.h ../filesys/openfile.h \
  ../threads/scheduler.h ../threads/list.h ../machine/interrupt.h \
  ../threads/list.h ../machine/stats.h ../machine/timer.h \
- ../filesys/synchdisk.h ../machine/disk.h ../threads/synch.h \
- ../network/post.h ../machine/network.h ../threads/synchlist.h \
- ../threads/synch.h /usr/include/unistd.h \
- /usr/include/x86_64-linux-gnu/bits/posix_opt.h \
+ ../userprog/bitmap.h ../filesys/openfile.h ../filesys/synchdisk.h \
+ ../machine/disk.h ../threads/synch.h ../network/post.h \
+ ../machine/network.h ../threads/synchlist.h ../threads/synch.h \
+ /usr/include/unistd.h /usr/include/x86_64-linux-gnu/bits/posix_opt.h \
  /usr/include/x86_64-linux-gnu/bits/environments.h \
  /usr/include/x86_64-linux-gnu/bits/confname.h \
  /usr/include/x86_64-linux-gnu/bits/getopt_posix.h \
@@ -1105,10 +1112,10 @@ addrspace.o: ../userprog/addrspace.cc /usr/include/stdc-predef.h \
  ../userprog/addrspace.h ../filesys/filesys.h ../filesys/openfile.h \
  ../threads/scheduler.h ../threads/list.h ../machine/interrupt.h \
  ../threads/list.h ../machine/stats.h ../machine/timer.h \
- ../filesys/synchdisk.h ../machine/disk.h ../threads/synch.h \
- ../network/post.h ../machine/network.h ../threads/synchlist.h \
- ../threads/synch.h ../userprog/addrspace.h ../bin/noff.h \
- ../userprog/bitmap.h ../filesys/openfile.h
+ ../userprog/bitmap.h ../filesys/openfile.h ../filesys/synchdisk.h \
+ ../machine/disk.h ../threads/synch.h ../network/post.h \
+ ../machine/network.h ../threads/synchlist.h ../threads/synch.h \
+ ../userprog/addrspace.h ../bin/noff.h ../userprog/bitmap.h
 bitmap.o: ../userprog/bitmap.cc /usr/include/stdc-predef.h \
  ../threads/copyright.h ../userprog/bitmap.h ../threads/utility.h \
  ../threads/copyright.h ../machine/sysdep.h /usr/include/c++/13/stdlib.h \
@@ -1233,9 +1240,10 @@ exception.o: ../userprog/exception.cc /usr/include/stdc-predef.h \
  ../userprog/addrspace.h ../filesys/filesys.h ../filesys/openfile.h \
  ../threads/scheduler.h ../threads/list.h ../machine/interrupt.h \
  ../threads/list.h ../machine/stats.h ../machine/timer.h \
- ../filesys/synchdisk.h ../machine/disk.h ../threads/synch.h \
- ../network/post.h ../machine/network.h ../threads/synchlist.h \
- ../threads/synch.h ../userprog/syscall.h
+ ../userprog/bitmap.h ../filesys/openfile.h ../filesys/synchdisk.h \
+ ../machine/disk.h ../threads/synch.h ../network/post.h \
+ ../machine/network.h ../threads/synchlist.h ../threads/synch.h \
+ ../userprog/syscall.h
 progtest.o: ../userprog/progtest.cc /usr/include/stdc-predef.h \
  ../threads/copyright.h ../threads/system.h ../threads/copyright.h \
  ../threads/utility.h ../machine/sysdep.h /usr/include/c++/13/stdlib.h \
@@ -1300,9 +1308,10 @@ progtest.o: ../userprog/progtest.cc /usr/include/stdc-predef.h \
  ../userprog/addrspace.h ../filesys/filesys.h ../filesys/openfile.h \
  ../threads/scheduler.h ../threads/list.h ../machine/interrupt.h \
  ../threads/list.h ../machine/stats.h ../machine/timer.h \
- ../filesys/synchdisk.h ../machine/disk.h ../threads/synch.h \
- ../network/post.h ../machine/network.h ../threads/synchlist.h \
- ../threads/synch.h ../machine/console.h ../userprog/addrspace.h
+ ../userprog/bitmap.h ../filesys/openfile.h ../filesys/synchdisk.h \
+ ../machine/disk.h ../threads/synch.h ../network/post.h \
+ ../machine/network.h ../threads/synchlist.h ../threads/synch.h \
+ ../machine/console.h ../userprog/addrspace.h
 console.o: ../machine/console.cc /usr/include/stdc-predef.h \
  ../threads/copyright.h ../machine/console.h ../threads/utility.h \
  ../threads/copyright.h ../machine/sysdep.h /usr/include/c++/13/stdlib.h \
@@ -1367,9 +1376,10 @@ console.o: ../machine/console.cc /usr/include/stdc-predef.h \
  ../machine/disk.h ../userprog/addrspace.h ../filesys/filesys.h \
  ../filesys/openfile.h ../threads/scheduler.h ../threads/list.h \
  ../machine/interrupt.h ../threads/list.h ../machine/stats.h \
- ../machine/timer.h ../filesys/synchdisk.h ../machine/disk.h \
- ../threads/synch.h ../network/post.h ../machine/network.h \
- ../threads/synchlist.h ../threads/synch.h
+ ../machine/timer.h ../userprog/bitmap.h ../filesys/openfile.h \
+ ../filesys/synchdisk.h ../machine/disk.h ../threads/synch.h \
+ ../network/post.h ../machine/network.h ../threads/synchlist.h \
+ ../threads/synch.h
 machine.o: ../machine/machine.cc /usr/include/stdc-predef.h \
  ../threads/copyright.h ../machine/machine.h ../threads/utility.h \
  ../threads/copyright.h ../machine/sysdep.h /usr/include/c++/13/stdlib.h \
@@ -1434,9 +1444,10 @@ machine.o: ../machine/machine.cc /usr/include/stdc-predef.h \
  ../machine/machine.h ../userprog/addrspace.h ../filesys/filesys.h \
  ../filesys/openfile.h ../threads/scheduler.h ../threads/list.h \
  ../machine/interrupt.h ../threads/list.h ../machine/stats.h \
- ../machine/timer.h ../filesys/synchdisk.h ../machine/disk.h \
- ../threads/synch.h ../network/post.h ../machine/network.h \
- ../threads/synchlist.h ../threads/synch.h
+ ../machine/timer.h ../userprog/bitmap.h ../filesys/openfile.h \
+ ../filesys/synchdisk.h ../machine/disk.h ../threads/synch.h \
+ ../network/post.h ../machine/network.h ../threads/synchlist.h \
+ ../threads/synch.h
 mipssim.o: ../machine/mipssim.cc /usr/include/stdc-predef.h \
  ../threads/copyright.h ../machine/machine.h ../threads/utility.h \
  ../threads/copyright.h ../machine/sysdep.h /usr/include/c++/13/stdlib.h \
@@ -1501,9 +1512,10 @@ mipssim.o: ../machine/mipssim.cc /usr/include/stdc-predef.h \
  ../threads/thread.h ../machine/machine.h ../userprog/addrspace.h \
  ../filesys/filesys.h ../filesys/openfile.h ../threads/scheduler.h \
  ../threads/list.h ../machine/interrupt.h ../threads/list.h \
- ../machine/stats.h ../machine/timer.h ../filesys/synchdisk.h \
- ../machine/disk.h ../threads/synch.h ../network/post.h \
- ../machine/network.h ../threads/synchlist.h ../threads/synch.h
+ ../machine/stats.h ../machine/timer.h ../userprog/bitmap.h \
+ ../filesys/openfile.h ../filesys/synchdisk.h ../machine/disk.h \
+ ../threads/synch.h ../network/post.h ../machine/network.h \
+ ../threads/synchlist.h ../threads/synch.h
 translate.o: ../machine/translate.cc /usr/include/stdc-predef.h \
  ../threads/copyright.h ../machine/machine.h ../threads/utility.h \
  ../threads/copyright.h ../machine/sysdep.h /usr/include/c++/13/stdlib.h \
@@ -1568,9 +1580,10 @@ translate.o: ../machine/translate.cc /usr/include/stdc-predef.h \
  ../threads/system.h ../threads/utility.h ../threads/thread.h \
  ../machine/machine.h ../threads/scheduler.h ../threads/list.h \
  ../machine/interrupt.h ../threads/list.h ../machine/stats.h \
- ../machine/timer.h ../filesys/synchdisk.h ../machine/disk.h \
- ../threads/synch.h ../network/post.h ../machine/network.h \
- ../threads/synchlist.h ../threads/synch.h
+ ../machine/timer.h ../userprog/bitmap.h ../filesys/openfile.h \
+ ../filesys/synchdisk.h ../machine/disk.h ../threads/synch.h \
+ ../network/post.h ../machine/network.h ../threads/synchlist.h \
+ ../threads/synch.h
 directory.o: ../filesys/directory.cc /usr/include/stdc-predef.h \
  ../threads/copyright.h ../threads/utility.h ../threads/copyright.h \
  ../machine/sysdep.h /usr/include/c++/13/stdlib.h \
@@ -1697,10 +1710,10 @@ filehdr.o: ../filesys/filehdr.cc /usr/include/stdc-predef.h \
  ../userprog/addrspace.h ../filesys/filesys.h ../filesys/openfile.h \
  ../threads/scheduler.h ../threads/list.h ../machine/interrupt.h \
  ../threads/list.h ../machine/stats.h ../machine/timer.h \
- ../filesys/synchdisk.h ../machine/disk.h ../threads/synch.h \
- ../network/post.h ../machine/network.h ../threads/synchlist.h \
- ../threads/synch.h ../filesys/filehdr.h ../userprog/bitmap.h \
- ../filesys/openfile.h
+ ../userprog/bitmap.h ../filesys/openfile.h ../filesys/synchdisk.h \
+ ../machine/disk.h ../threads/synch.h ../network/post.h \
+ ../machine/network.h ../threads/synchlist.h ../threads/synch.h \
+ ../filesys/filehdr.h
 filesys.o: ../filesys/filesys.cc /usr/include/stdc-predef.h \
  ../threads/copyright.h ../machine/disk.h ../threads/utility.h \
  ../threads/copyright.h ../machine/sysdep.h /usr/include/c++/13/stdlib.h \
@@ -1827,10 +1840,10 @@ fstest.o: ../filesys/fstest.cc /usr/include/stdc-predef.h \
  ../machine/machine.h ../machine/translate.h ../machine/disk.h \
  ../userprog/addrspace.h ../filesys/filesys.h ../threads/scheduler.h \
  ../threads/list.h ../machine/interrupt.h ../threads/list.h \
- ../machine/stats.h ../machine/timer.h ../filesys/synchdisk.h \
- ../machine/disk.h ../threads/synch.h ../network/post.h \
- ../machine/network.h ../threads/synchlist.h ../threads/synch.h \
- ../threads/thread.h
+ ../machine/stats.h ../machine/timer.h ../userprog/bitmap.h \
+ ../filesys/openfile.h ../filesys/synchdisk.h ../machine/disk.h \
+ ../threads/synch.h ../network/post.h ../machine/network.h \
+ ../threads/synchlist.h ../threads/synch.h ../threads/thread.h
 openfile.o: ../filesys/openfile.cc /usr/include/stdc-predef.h \
  ../threads/copyright.h ../filesys/filehdr.h ../machine/disk.h \
  ../threads/utility.h ../threads/copyright.h ../machine/sysdep.h \
@@ -2025,9 +2038,9 @@ disk.o: ../machine/disk.cc /usr/include/stdc-predef.h \
  ../userprog/addrspace.h ../filesys/filesys.h ../filesys/openfile.h \
  ../threads/scheduler.h ../threads/list.h ../machine/interrupt.h \
  ../threads/list.h ../machine/stats.h ../machine/timer.h \
- ../filesys/synchdisk.h ../machine/disk.h ../threads/synch.h \
- ../network/post.h ../machine/network.h ../threads/synchlist.h \
- ../threads/synch.h
+ ../userprog/bitmap.h ../filesys/openfile.h ../filesys/synchdisk.h \
+ ../machine/disk.h ../threads/synch.h ../network/post.h \
+ ../machine/network.h ../threads/synchlist.h ../threads/synch.h
 nettest.o: ../network/nettest.cc /usr/include/stdc-predef.h \
  ../threads/copyright.h ../threads/system.h ../threads/copyright.h \
  ../threads/utility.h ../machine/sysdep.h /usr/include/c++/13/stdlib.h \
@@ -2092,9 +2105,10 @@ nettest.o: ../network/nettest.cc /usr/include/stdc-predef.h \
  ../userprog/addrspace.h ../filesys/filesys.h ../filesys/openfile.h \
  ../threads/scheduler.h ../threads/list.h ../machine/interrupt.h \
  ../threads/list.h ../machine/stats.h ../machine/timer.h \
- ../filesys/synchdisk.h ../machine/disk.h ../threads/synch.h \
- ../network/post.h ../machine/network.h ../threads/synchlist.h \
- ../threads/synch.h ../network/post.h
+ ../userprog/bitmap.h ../filesys/openfile.h ../filesys/synchdisk.h \
+ ../machine/disk.h ../threads/synch.h ../network/post.h \
+ ../machine/network.h ../threads/synchlist.h ../threads/synch.h \
+ ../network/post.h
 post.o: ../network/post.cc /usr/include/stdc-predef.h \
  ../threads/copyright.h ../network/post.h ../machine/network.h \
  ../threads/utility.h ../threads/copyright.h ../machine/sysdep.h \
@@ -2222,9 +2236,9 @@ network.o: ../machine/network.cc /usr/include/stdc-predef.h \
  ../userprog/addrspace.h ../filesys/filesys.h ../filesys/openfile.h \
  ../threads/scheduler.h ../threads/list.h ../machine/interrupt.h \
  ../threads/list.h ../machine/stats.h ../machine/timer.h \
- ../filesys/synchdisk.h ../machine/disk.h ../threads/synch.h \
- ../network/post.h ../machine/network.h ../threads/synchlist.h \
- ../threads/synch.h
+ ../userprog/bitmap.h ../filesys/openfile.h ../filesys/synchdisk.h \
+ ../machine/disk.h ../threads/synch.h ../network/post.h \
+ ../machine/network.h ../threads/synchlist.h ../threads/synch.h
 # DEPENDENCIES MUST END AT END OF FILE
 # IF YOU PUT STUFF HERE IT WILL GO AWAY
 # see make depend above

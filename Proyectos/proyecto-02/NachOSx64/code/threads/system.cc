@@ -34,6 +34,7 @@ SynchDisk   *synchDisk;
 
 #ifdef USER_PROGRAM	// requires either FILESYS or FILESYS_STUB
 Machine *machine;	// user program memory and registers
+BitMap *memoryMap;
 #endif
 
 #ifdef NETWORK
@@ -95,6 +96,7 @@ Initialize(int argc, char **argv)
     
 #ifdef USER_PROGRAM
     bool debugUserProg = false;	// single step user program
+    memoryMap = new BitMap(NumPhysPages);
 #endif
 #ifdef FILESYS_NEEDED
     bool format = false;	// format disk

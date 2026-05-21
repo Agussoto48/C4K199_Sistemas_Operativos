@@ -338,7 +338,6 @@ void ExceptionHandler(ExceptionType which)
          break;
       case SC_Write: // System call # 7
          NachOS_Write();
-         AdvancePC();
          break;
       case SC_Close: // System call # 8
          NachOS_Close();
@@ -418,6 +417,7 @@ void ExceptionHandler(ExceptionType which)
          ASSERT(false);
          break;
       }
+      AdvancePC();
       break;
 
    case PageFaultException:
