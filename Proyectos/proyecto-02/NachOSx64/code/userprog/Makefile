@@ -1176,18 +1176,18 @@ exception.o: ../userprog/exception.cc /usr/include/stdc-predef.h \
  /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
  /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
  /usr/include/x86_64-linux-gnu/bits/floatn.h \
- /usr/include/x86_64-linux-gnu/bits/floatn-common.h \
- ../threads/copyright.h ../threads/system.h ../threads/copyright.h \
- ../threads/utility.h ../machine/sysdep.h /usr/include/c++/13/stdlib.h \
- /usr/include/c++/13/cstdlib \
+ /usr/include/x86_64-linux-gnu/bits/floatn-common.h /usr/include/string.h \
+ /usr/include/x86_64-linux-gnu/bits/types/locale_t.h \
+ /usr/include/x86_64-linux-gnu/bits/types/__locale_t.h \
+ /usr/include/strings.h ../threads/copyright.h ../threads/system.h \
+ ../threads/copyright.h ../threads/utility.h ../machine/sysdep.h \
+ /usr/include/c++/13/stdlib.h /usr/include/c++/13/cstdlib \
  /usr/include/x86_64-linux-gnu/c++/13/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/os_defines.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/cpu_defines.h \
  /usr/include/c++/13/pstl/pstl_config.h /usr/include/stdlib.h \
  /usr/include/x86_64-linux-gnu/bits/waitflags.h \
  /usr/include/x86_64-linux-gnu/bits/waitstatus.h \
- /usr/include/x86_64-linux-gnu/bits/types/locale_t.h \
- /usr/include/x86_64-linux-gnu/bits/types/__locale_t.h \
  /usr/include/x86_64-linux-gnu/sys/types.h \
  /usr/include/x86_64-linux-gnu/bits/types/clock_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/clockid_t.h \
@@ -1211,14 +1211,13 @@ exception.o: ../userprog/exception.cc /usr/include/stdc-predef.h \
  /usr/include/x86_64-linux-gnu/bits/struct_mutex.h \
  /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h /usr/include/alloca.h \
  /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
- /usr/include/c++/13/bits/std_abs.h /usr/include/string.h \
- /usr/include/strings.h ../threads/thread.h ../machine/machine.h \
- ../threads/utility.h ../machine/translate.h ../machine/disk.h \
- ../userprog/addrspace.h ../filesys/filesys.h ../filesys/openfile.h \
- ../threads/scheduler.h ../threads/list.h ../machine/interrupt.h \
- ../threads/list.h ../machine/stats.h ../machine/timer.h \
- ../userprog/bitmap.h ../filesys/openfile.h ../userprog/syscall.h \
- ../userprog/NachosOpenFilesTable.h
+ /usr/include/c++/13/bits/std_abs.h ../threads/thread.h \
+ ../machine/machine.h ../threads/utility.h ../machine/translate.h \
+ ../machine/disk.h ../userprog/addrspace.h ../filesys/filesys.h \
+ ../filesys/openfile.h ../threads/scheduler.h ../threads/list.h \
+ ../machine/interrupt.h ../threads/list.h ../machine/stats.h \
+ ../machine/timer.h ../userprog/bitmap.h ../filesys/openfile.h \
+ ../userprog/syscall.h ../userprog/NachosOpenFilesTable.h
 progtest.o: ../userprog/progtest.cc /usr/include/stdc-predef.h \
  ../threads/copyright.h ../threads/system.h ../threads/copyright.h \
  ../threads/utility.h ../machine/sysdep.h /usr/include/c++/13/stdlib.h \

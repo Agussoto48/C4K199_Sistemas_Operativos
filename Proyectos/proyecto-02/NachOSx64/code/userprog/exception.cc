@@ -24,6 +24,7 @@
 // Copyright (c) -2025 Universidad de Costa Rica
 
 #include <stdio.h>
+#include <string.h>
 #include "copyright.h"
 #include "system.h"
 #include "syscall.h"
@@ -66,8 +67,78 @@ void NachOS_Exit()
 /*
  *  System call interface: SpaceId Exec( char * )
  */
+bool ReadStringFromUser(int addr, char *buffer, int maxSize)
+{
+   int value;
+   int i = 0;
+
+   do
+   {
+      if (!machine->ReadMem(addr + i, 1, &value))
+      {
+         buffer[0] = '\0';
+         return false;
+      }
+
+      buffer[i] = (char)value;
+      i++;
+
+   } while (buffer[i - 1] != '\0' && i < maxSize - 1);
+
+   buffer[maxSize - 1] = '\0';
+
+   return true;
+}
+void StartExecProcess(void *arg)
+{
+   char *filename = (char *)arg;
+
+   OpenFile *executable = fileSystem->Open(filename);
+
+   if (executable == NULL)
+   {
+      printf("Unable to open file %s\n", filename);
+      delete[] filename;
+      currentThread->Finish();
+      return;
+   }
+
+   if (currentThread->space != NULL)
+   {
+      delete currentThread->space;
+      currentThread->space = NULL;
+   }
+
+   currentThread->space = new AddrSpace(executable);
+
+   delete executable;
+   delete[] filename;
+
+   currentThread->space->InitRegisters();
+   currentThread->space->RestoreState();
+
+   machine->Run();
+
+   ASSERT(false);
+}
 void NachOS_Exec()
 { // System call 2
+   int addr = machine->ReadRegister(4);
+   char filename[256];
+
+   if (!ReadStringFromUser(addr, filename, 256))
+   {
+      machine->WriteRegister(2, -1);
+      return;
+   }
+
+   char *programName = new char[256];
+   strcpy(programName, filename);
+
+   Thread *newThread = new Thread(programName);
+   newThread->Fork(StartExecProcess, (void *)programName);
+
+   machine->WriteRegister(2, 1);
 }
 
 /*
@@ -82,21 +153,17 @@ void NachOS_Join()
  */
 void NachOS_Create()
 { // System call 4
-   int userAddress = machine->ReadRegister(4);
-
+   int addr = machine->ReadRegister(4);
    char filename[256];
-   int value;
-   int i = 0;
 
-   // Lee nombre del archivo, desde mem de user
-   do
+   if (!ReadStringFromUser(addr, filename, 256))
    {
-      machine->ReadMem(userAddress + i, 1, &value);
-      filename[i] = (char)value;
-      i++;
-   } while (filename[i - 1] != '\0' && i < 255);
+      machine->WriteRegister(2, -1);
+      return;
+   }
 
    FILE *file = fopen(filename, "w");
+
    if (file == NULL)
    {
       machine->WriteRegister(2, -1);
@@ -113,25 +180,13 @@ void NachOS_Create()
 void NachOS_Open()
 { // System call 5
    int addr = machine->ReadRegister(4);
-
    char filename[256];
-   int value;
-   int i = 0;
 
-   do
+   if (!ReadStringFromUser(addr, filename, 256))
    {
-      if (!machine->ReadMem(addr + i, 1, &value))
-      {
-         machine->WriteRegister(2, -1);
-         return;
-      }
-
-      filename[i] = (char)value;
-      i++;
-
-   } while (filename[i - 1] != '\0' && i < 255);
-
-   filename[255] = '\0';
+      machine->WriteRegister(2, -1);
+      return;
+   }
 
    FILE *openedFile = fopen(filename, "r+");
 
@@ -142,7 +197,6 @@ void NachOS_Open()
    }
 
    int fileId = openFilesTable->Open(openedFile);
-
    machine->WriteRegister(2, fileId);
 }
 
@@ -163,9 +217,7 @@ void NachOS_Read()
    }
 
    char *buffer = new char[size];
-
    int bytesRead = 0;
-
    if (file == ConsoleInput)
    {
       for (int i = 0; i < size; i++)
@@ -254,6 +306,7 @@ void NachOS_Write()
       break;
 
    case ConsoleError:
+      // Mensaje de error
       printf("%d\n", machine->ReadRegister(4));
       machine->WriteRegister(2, size);
       break;
@@ -280,17 +333,37 @@ void NachOS_Write()
 void NachOS_Close()
 { // System call 8
    int file = machine->ReadRegister(4);
-
    int result = openFilesTable->Close(file);
-
    machine->WriteRegister(2, result);
 }
 
 /*
  *  System call interface: void Fork( void (*func)() )
  */
+void NachOSForkThread(void *p)
+{
+   AddrSpace *space = currentThread->space;
+
+   space->InitRegisters();
+   space->RestoreState();
+
+   machine->WriteRegister(RetAddrReg, 4);
+   machine->WriteRegister(PCReg, (long)p);
+   machine->WriteRegister(NextPCReg, (long)p + 4);
+
+   machine->Run();
+
+   ASSERT(false);
+}
 void NachOS_Fork()
 { // System call 9
+   int addr = machine->ReadRegister(4);
+
+   Thread *child = new Thread("Fork child");
+   child->space = new AddrSpace(currentThread->space);
+   child->Fork(NachOSForkThread, (void *)addr);
+
+   machine->WriteRegister(2, 0);
 }
 
 /*
@@ -488,32 +561,40 @@ void ExceptionHandler(ExceptionType which)
          break;
       case SC_Exec: // System call # 2
          NachOS_Exec();
+         AdvancePC();
          break;
       case SC_Join: // System call # 3
          NachOS_Join();
+         AdvancePC();
          break;
 
       case SC_Create: // System call # 4
          NachOS_Create();
+         AdvancePC();
          break;
       case SC_Open: // System call # 5
          NachOS_Open();
          break;
       case SC_Read: // System call # 6
          NachOS_Read();
+         AdvancePC();
          break;
       case SC_Write: // System call # 7
          NachOS_Write();
+         AdvancePC();
          break;
       case SC_Close: // System call # 8
          NachOS_Close();
+         AdvancePC();
          break;
 
       case SC_Fork: // System call # 9
          NachOS_Fork();
+         AdvancePC();
          break;
       case SC_Yield: // System call # 10
          NachOS_Yield();
+         AdvancePC();
          break;
 
       case SC_SemCreate: // System call # 11
@@ -583,7 +664,7 @@ void ExceptionHandler(ExceptionType which)
          ASSERT(false);
          break;
       }
-      AdvancePC();
+      // AdvancePC();
       break;
 
    case PageFaultException:

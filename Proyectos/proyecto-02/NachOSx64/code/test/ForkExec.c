@@ -5,12 +5,12 @@ void usememory(){
 }
 
 int main() {
-	int i=0;
 
-	for (i = 0; i < 5; i++) {
-		Fork(usememory);
-		Yield();
-	}
-	Exit(0);
+    Write("antes\n", 6, ConsoleOutput);
+    Exec("../test/memory");
+	Yield();
+    Write("despues\n", 8, ConsoleOutput);
+    Exit(0);
+
 }
 

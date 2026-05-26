@@ -118,11 +118,13 @@ AddrSpace::AddrSpace(OpenFile *executable)
                                       // to run anything too big --
                                       // at least until we have
                                       // virtual memory
+    printf("AddrSpace necesita %d paginas, libres %d\n", numPages, memoryMap->NumClear());
     ASSERT((int)numPages <= memoryMap->NumClear());
 
     DEBUG('a', "Initializing address space, num pages %d, size %d\n", numPages, size);
     // first, set up the translation
     this->pageTable = new TranslationEntry[numPages];
+    this->ownedPages = new bool[numPages];
     for (i = 0; i < numPages; i++)
     {
         int physicalPage = memoryMap->Find();
@@ -135,6 +137,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
         pageTable[i].use = false;
         pageTable[i].dirty = false;
         pageTable[i].readOnly = false;
+        ownedPages[i] = true;
     }
 
     // zero out the entire address space, to zero the unitialized data segment
@@ -158,6 +161,37 @@ AddrSpace::AddrSpace(OpenFile *executable)
     }
 }
 
+AddrSpace::AddrSpace(AddrSpace *parent)
+{
+    numPages = parent->numPages;
+
+    this->pageTable = new TranslationEntry[numPages];
+    this->ownedPages = new bool[numPages];
+
+    int stackPages = divRoundUp(UserStackSize, PageSize);
+    int firstStackPage = numPages - stackPages;
+
+    for (unsigned int i = 0; i < numPages; i++)
+    {
+        pageTable[i] = parent->pageTable[i];
+
+        if ((int)i >= firstStackPage)
+        {
+            int physicalPage = memoryMap->Find();
+
+            ASSERT(physicalPage != -1);
+
+            pageTable[i].physicalPage = physicalPage;
+            ownedPages[i] = true;
+
+            bzero(&(machine->mainMemory[physicalPage * PageSize]), PageSize);
+        }
+        else
+        {
+            ownedPages[i] = false;
+        }
+    }
+}
 //----------------------------------------------------------------------
 // AddrSpace::~AddrSpace
 // 	Dealloate an address space.  Nothing for now!
@@ -168,8 +202,12 @@ AddrSpace::~AddrSpace()
     // Libera las páginas físicas asignadas a este proceso.
     for (unsigned int i = 0; i < numPages; i++)
     {
-        memoryMap->Clear(pageTable[i].physicalPage);
+        if (ownedPages[i])
+        {
+            memoryMap->Clear(pageTable[i].physicalPage);
+        }
     }
+    delete[] this->ownedPages;
     delete[] this->pageTable;
 }
 

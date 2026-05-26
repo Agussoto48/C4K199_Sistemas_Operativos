@@ -91,7 +91,7 @@ USERPROG_H = ../userprog/addrspace.h\
 	../machine/machine.h\
 	../machine/mipssim.h\
 	../machine/translate.h\
-	../userprog/NachosOpenFilesTable.h
+	../userprog/NachosOpenFilesTable.h\
 
 USERPROG_C = ../userprog/addrspace.cc\
 	../userprog/bitmap.cc\
