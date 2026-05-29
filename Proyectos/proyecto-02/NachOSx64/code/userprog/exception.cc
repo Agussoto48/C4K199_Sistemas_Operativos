@@ -52,8 +52,12 @@ struct ProcessInfo
 ProcessInfo processTable[MAX_PROCESSES];
 int nextProcessId = 1;
 
-#define MAX_PROCESSES 32
-
+// Declaracion de funciones
+bool ReadStringFromUser(int addr, char *buffer, int maxSize);
+void StartExecProcess(void *arg);
+int RegisterProcess(Thread *thread);
+void NachOSForkThread(void *p);
+static void AdvancePC();
 /*
  *  System call interface: Halt()
  */
@@ -96,76 +100,7 @@ void NachOS_Exit()
 /*
  *  System call interface: SpaceId Exec( char * )
  */
-bool ReadStringFromUser(int addr, char *buffer, int maxSize)
-{
-   int value;
-   int i = 0;
 
-   do
-   {
-      if (!machine->ReadMem(addr + i, 1, &value))
-      {
-         buffer[0] = '\0';
-         return false;
-      }
-
-      buffer[i] = (char)value;
-      i++;
-
-   } while (buffer[i - 1] != '\0' && i < maxSize - 1);
-
-   buffer[maxSize - 1] = '\0';
-
-   return true;
-}
-void StartExecProcess(void *arg)
-{
-   char *filename = (char *)arg;
-
-   OpenFile *executable = fileSystem->Open(filename);
-
-   if (executable == NULL)
-   {
-      printf("Unable to open file %s\n", filename);
-      delete[] filename;
-      currentThread->Finish();
-      return;
-   }
-
-   if (currentThread->space != NULL)
-   {
-      delete currentThread->space;
-      currentThread->space = NULL;
-   }
-
-   currentThread->space = new AddrSpace(executable);
-
-   delete executable;
-   delete[] filename;
-
-   currentThread->space->InitRegisters();
-   currentThread->space->RestoreState();
-
-   machine->Run();
-
-   ASSERT(false);
-}
-int RegisterProcess(Thread *thread)
-{
-   for (int i = 1; i < MAX_PROCESSES; i++)
-   {
-      if (!processTable[i].active)
-      {
-         processTable[i].thread = thread;
-         processTable[i].joinSem = new Semaphore("join semaphore", 0);
-         processTable[i].exitStatus = 0;
-         processTable[i].active = true;
-         return i;
-      }
-   }
-
-   return -1;
-}
 void NachOS_Exec()
 { // System call 2
    int addr = machine->ReadRegister(4);
@@ -424,21 +359,6 @@ void NachOS_Close()
 /*
  *  System call interface: void Fork( void (*func)() )
  */
-void NachOSForkThread(void *p)
-{
-   AddrSpace *space = currentThread->space;
-
-   space->InitRegisters();
-   space->RestoreState();
-
-   machine->WriteRegister(RetAddrReg, 4);
-   machine->WriteRegister(PCReg, (long)p);
-   machine->WriteRegister(NextPCReg, (long)p + 4);
-
-   machine->Run();
-
-   ASSERT(false);
-}
 void NachOS_Fork()
 { // System call 9
    int addr = machine->ReadRegister(4);
@@ -627,20 +547,6 @@ void NachOS_Accept()
 void NachOS_Shutdown()
 { // System call 25
 }
-
-// Avanza los registros del contador de programa después de atender un system call.
-// Esto evita que NachOS vuelva a ejecutar la misma instrucción de syscall.
-static void AdvancePC()
-{
-   // Guarda la instrucción actual como la anterior.
-   machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
-
-   // Avanza el PC a la siguiente instrucción.
-   machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
-
-   // Prepara el siguiente PC, avanzando 4 bytes.
-   machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg) + 4);
-}
 //----------------------------------------------------------------------
 // ExceptionHandler
 // 	Entry point into the Nachos kernel.  Called when a user program
@@ -826,4 +732,111 @@ void ExceptionHandler(ExceptionType which)
       ASSERT(false);
       break;
    }
+}
+
+// Definicion de funciones
+
+// Lee un string desde la memoria del programa usuario y lo copia a un buffer del kernel,
+// se usa para traer nombres de archivos o direcciones como texto.
+bool ReadStringFromUser(int addr, char *buffer, int maxSize)
+{
+   int value;
+   int i = 0;
+
+   do
+   {
+      if (!machine->ReadMem(addr + i, 1, &value))
+      {
+         buffer[0] = '\0';
+         return false;
+      }
+
+      buffer[i] = (char)value;
+      i++;
+
+   } while (buffer[i - 1] != '\0' && i < maxSize - 1);
+
+   buffer[maxSize - 1] = '\0';
+
+   return true;
+}
+// Inicia la ejecución de un programa cargado por Exec, abre el archivo ejecutable, crea su espacio de direcciones y arranca la simulación.
+void StartExecProcess(void *arg)
+{
+   char *filename = (char *)arg;
+
+   OpenFile *executable = fileSystem->Open(filename);
+
+   if (executable == NULL)
+   {
+      printf("Unable to open file %s\n", filename);
+      delete[] filename;
+      currentThread->Finish();
+      return;
+   }
+
+   if (currentThread->space != NULL)
+   {
+      delete currentThread->space;
+      currentThread->space = NULL;
+   }
+
+   currentThread->space = new AddrSpace(executable);
+
+   delete executable;
+   delete[] filename;
+
+   currentThread->space->InitRegisters();
+   currentThread->space->RestoreState();
+
+   machine->Run();
+
+   ASSERT(false);
+}
+// Registra un proceso nuevo en la tabla de procesos y devuelve un identificador que luego puede ser usado por Join.
+int RegisterProcess(Thread *thread)
+{
+   for (int i = 1; i < MAX_PROCESSES; i++)
+   {
+      if (!processTable[i].active)
+      {
+         processTable[i].thread = thread;
+         processTable[i].joinSem = new Semaphore("join semaphore", 0);
+         processTable[i].exitStatus = 0;
+         processTable[i].active = true;
+         return i;
+      }
+   }
+
+   return -1;
+}
+// Función que ejecuta el hilo hijo creado por Fork.
+// Prepara los registros para que el hijo empiece en la función indicada por el usuario.
+void NachOSForkThread(void *p)
+{
+   AddrSpace *space = currentThread->space;
+
+   space->InitRegisters();
+   space->RestoreState();
+
+   machine->WriteRegister(RetAddrReg, 4);
+   machine->WriteRegister(PCReg, (long)p);
+   machine->WriteRegister(NextPCReg, (long)p + 4);
+
+   machine->Run();
+
+   ASSERT(false);
+}
+// Avanza los registros del contador de programa después de atender un system call.
+// Esto evita que NachOS vuelva a ejecutar la misma instrucción de syscall.
+static void AdvancePC()
+{
+   // Guarda la instrucción actual como la anterior.
+   machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
+
+   // Avanza el PC a la siguiente instrucción.
+   machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
+
+   // Prepara el siguiente PC, avanzando 4 bytes.
+   machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg) + 4);
 }
