@@ -25,6 +25,11 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 #include "copyright.h"
 #include "system.h"
 #include "syscall.h"
@@ -301,14 +306,20 @@ void NachOS_Read()
    {
       FILE *openedFile = openFilesTable->GetFile(file);
 
-      if (openedFile == NULL)
+      if (openedFile != NULL)
       {
-         delete[] buffer;
-         machine->WriteRegister(2, -1);
-         return;
+         bytesRead = fread(buffer, 1, size, openedFile);
       }
-
-      bytesRead = fread(buffer, 1, size, openedFile);
+      else
+      {
+         bytesRead = recv(file, buffer, size, 0);
+         if (bytesRead > 0)
+         {
+            delete[] buffer;
+            machine->WriteRegister(2, -1);
+            return;
+         }
+      }
    }
 
    for (int i = 0; i < bytesRead; i++)
@@ -380,14 +391,17 @@ void NachOS_Write()
    default:
       FILE *openedFile = openFilesTable->GetFile(file);
 
-      if (openedFile == NULL)
+      if (openedFile != NULL)
       {
-         machine->WriteRegister(2, -1);
-         break;
+         int written = fwrite(buffer, 1, size, openedFile);
+         machine->WriteRegister(2, written);
+      }
+      else
+      {
+         int sent = send(file, buffer, size, 0);
+         machine->WriteRegister(2, sent);
       }
 
-      int written = fwrite(buffer, 1, size, openedFile);
-      machine->WriteRegister(2, written);
       break;
    }
 
@@ -400,6 +414,10 @@ void NachOS_Close()
 { // System call 8
    int file = machine->ReadRegister(4);
    int result = openFilesTable->Close(file);
+   if (result == -1 && file > 2)
+   {
+      result = close(file);
+   }
    machine->WriteRegister(2, result);
 }
 
@@ -536,6 +554,18 @@ void NachOS_CondBroadcast()
  */
 void NachOS_Socket()
 { // System call 30
+   int family = machine->ReadRegister(4);
+   int type = machine->ReadRegister(5);
+
+   int socketId = socket(family, type, 0);
+
+   if (socketId < 0)
+   {
+      machine->WriteRegister(2, -1);
+      return;
+   }
+
+   machine->WriteRegister(2, socketId);
 }
 
 /*
@@ -543,6 +573,31 @@ void NachOS_Socket()
  */
 void NachOS_Connect()
 { // System call 31
+   int socketId = machine->ReadRegister(4);
+   int addr = machine->ReadRegister(5);
+   int port = machine->ReadRegister(6);
+
+   char ip[64];
+   if (!ReadStringFromUser(addr, ip, 64))
+   {
+      machine->WriteRegister(2, -1);
+      return;
+   }
+
+   struct sockaddr_in server;
+   bzero((char *)&server, sizeof(server));
+   server.sin_family = AF_INET;
+   server.sin_port = htons(port);
+   server.sin_addr.s_addr = inet_addr(ip);
+
+   int result = connect(socketId, (struct sockaddr *)&server, sizeof(server));
+   if (result < 0)
+   {
+      machine->WriteRegister(2, -1);
+      return;
+   }
+
+   machine->WriteRegister(2, 0);
 }
 
 /*
@@ -708,9 +763,11 @@ void ExceptionHandler(ExceptionType which)
 
       case SC_Socket: // System call # 30
          NachOS_Socket();
+         AdvancePC();
          break;
       case SC_Connect: // System call # 31
          NachOS_Connect();
+         AdvancePC();
          break;
       case SC_Bind: // System call # 32
          NachOS_Bind();

@@ -20,15 +20,17 @@ int strlen(const char *str) {
 int main() {
    int id;
    char a[ 512 ];
-   char * req = "GET /aArt/index.php?disk=Disk-01&fig=";
+   char req[256];
+   req[0] = '\0';
    char s[ 50 ];
 
    id = Socket( AF_INET_NachOS, SOCK_STREAM_NachOS );
    Connect( id, "163.178.104.62", 80 );
    Write( "Figura: ", 8, 1 );
    Read( s, 50, 0 );
-   req = strcat( req, s );
-   req = strcat( req, " HTTP/1.0\r\nUser-Agent: nachos\r\n\r\n\r\n" );
+   strcat(req, "GET /aArt/index.php?disk=Disk-01&fig=");
+   strcat( req, s );
+   strcat( req, " HTTP/1.0\r\nUser-Agent: nachos\r\n\r\n\r\n" );
    Write( req, strlen( req ), 1 );
 //   Write( "GET / HTTP/1.0\r\n\r\n", 32, id );
    Write( req, strlen( req ), id );

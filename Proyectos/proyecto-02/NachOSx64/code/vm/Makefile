@@ -1182,16 +1182,7 @@ exception.o: ../userprog/exception.cc /usr/include/stdc-predef.h \
  /usr/include/x86_64-linux-gnu/bits/floatn-common.h /usr/include/string.h \
  /usr/include/x86_64-linux-gnu/bits/types/locale_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__locale_t.h \
- /usr/include/strings.h ../threads/copyright.h ../threads/system.h \
- ../threads/copyright.h ../threads/utility.h ../machine/sysdep.h \
- /usr/include/c++/13/stdlib.h /usr/include/c++/13/cstdlib \
- /usr/include/x86_64-linux-gnu/c++/13/bits/c++config.h \
- /usr/include/x86_64-linux-gnu/c++/13/bits/os_defines.h \
- /usr/include/x86_64-linux-gnu/c++/13/bits/cpu_defines.h \
- /usr/include/c++/13/pstl/pstl_config.h /usr/include/stdlib.h \
- /usr/include/x86_64-linux-gnu/bits/waitflags.h \
- /usr/include/x86_64-linux-gnu/bits/waitstatus.h \
- /usr/include/x86_64-linux-gnu/sys/types.h \
+ /usr/include/strings.h /usr/include/x86_64-linux-gnu/sys/types.h \
  /usr/include/x86_64-linux-gnu/bits/types/clock_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/clockid_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/time_t.h \
@@ -1212,7 +1203,42 @@ exception.o: ../userprog/exception.cc /usr/include/stdc-predef.h \
  /usr/include/x86_64-linux-gnu/bits/pthreadtypes-arch.h \
  /usr/include/x86_64-linux-gnu/bits/atomic_wide_counter.h \
  /usr/include/x86_64-linux-gnu/bits/struct_mutex.h \
- /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h /usr/include/alloca.h \
+ /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h \
+ /usr/include/x86_64-linux-gnu/sys/socket.h \
+ /usr/include/x86_64-linux-gnu/bits/types/struct_iovec.h \
+ /usr/include/x86_64-linux-gnu/bits/socket.h \
+ /usr/include/x86_64-linux-gnu/bits/socket_type.h \
+ /usr/include/x86_64-linux-gnu/bits/sockaddr.h \
+ /usr/include/x86_64-linux-gnu/asm/socket.h \
+ /usr/include/asm-generic/socket.h /usr/include/linux/posix_types.h \
+ /usr/include/linux/stddef.h \
+ /usr/include/x86_64-linux-gnu/asm/posix_types.h \
+ /usr/include/x86_64-linux-gnu/asm/posix_types_64.h \
+ /usr/include/asm-generic/posix_types.h \
+ /usr/include/x86_64-linux-gnu/asm/bitsperlong.h \
+ /usr/include/asm-generic/bitsperlong.h \
+ /usr/include/x86_64-linux-gnu/asm/sockios.h \
+ /usr/include/asm-generic/sockios.h \
+ /usr/include/x86_64-linux-gnu/bits/types/struct_osockaddr.h \
+ /usr/include/netinet/in.h \
+ /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h \
+ /usr/include/x86_64-linux-gnu/bits/in.h /usr/include/arpa/inet.h \
+ /usr/include/unistd.h /usr/include/x86_64-linux-gnu/bits/posix_opt.h \
+ /usr/include/x86_64-linux-gnu/bits/environments.h \
+ /usr/include/x86_64-linux-gnu/bits/confname.h \
+ /usr/include/x86_64-linux-gnu/bits/getopt_posix.h \
+ /usr/include/x86_64-linux-gnu/bits/getopt_core.h \
+ /usr/include/x86_64-linux-gnu/bits/unistd_ext.h \
+ /usr/include/linux/close_range.h ../threads/copyright.h \
+ ../threads/system.h ../threads/copyright.h ../threads/utility.h \
+ ../machine/sysdep.h /usr/include/c++/13/stdlib.h \
+ /usr/include/c++/13/cstdlib \
+ /usr/include/x86_64-linux-gnu/c++/13/bits/c++config.h \
+ /usr/include/x86_64-linux-gnu/c++/13/bits/os_defines.h \
+ /usr/include/x86_64-linux-gnu/c++/13/bits/cpu_defines.h \
+ /usr/include/c++/13/pstl/pstl_config.h /usr/include/stdlib.h \
+ /usr/include/x86_64-linux-gnu/bits/waitflags.h \
+ /usr/include/x86_64-linux-gnu/bits/waitstatus.h /usr/include/alloca.h \
  /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
  /usr/include/c++/13/bits/std_abs.h ../threads/thread.h \
  ../machine/machine.h ../threads/utility.h ../machine/translate.h \
