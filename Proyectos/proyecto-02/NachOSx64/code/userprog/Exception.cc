@@ -248,7 +248,7 @@ void NachOS_Read()
       else
       {
          bytesRead = recv(file, buffer, size, 0);
-         if (bytesRead > 0)
+         if (bytesRead < 0)
          {
             delete[] buffer;
             machine->WriteRegister(2, -1);
