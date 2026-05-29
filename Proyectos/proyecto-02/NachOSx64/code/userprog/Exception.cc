@@ -28,11 +28,26 @@
 #include "copyright.h"
 #include "system.h"
 #include "syscall.h"
+#include "synch.h"
 #include "NachosOpenFilesTable.h"
 
 #define SC_NachOS 12345
+#define MAX_PROCESSES 32
 
 NachosOpenFilesTable *openFilesTable = new NachosOpenFilesTable();
+
+struct ProcessInfo
+{
+   Thread *thread;
+   Semaphore *joinSem;
+   int exitStatus;
+   bool active;
+};
+
+ProcessInfo processTable[MAX_PROCESSES];
+int nextProcessId = 1;
+
+#define MAX_PROCESSES 32
 
 /*
  *  System call interface: Halt()
@@ -53,13 +68,22 @@ void NachOS_Exit()
    int status = machine->ReadRegister(4);
    DEBUG('u', "Exit system call %d\n", status);
 
-   // Libera el espacio de direcciones del proceso actual.
+   // Libera el espacio de direcciones de los procesos.
+   for (int i = 1; i < MAX_PROCESSES; i++)
+   {
+      if (processTable[i].active && processTable[i].thread == currentThread)
+      {
+         processTable[i].exitStatus = status;
+         processTable[i].joinSem->V();
+         break;
+      }
+   }
+
    if (currentThread->space != NULL)
    {
       delete currentThread->space;
       currentThread->space = NULL;
    }
-
    // Finaliza el hilo actual.
    currentThread->Finish();
 }
@@ -121,6 +145,22 @@ void StartExecProcess(void *arg)
 
    ASSERT(false);
 }
+int RegisterProcess(Thread *thread)
+{
+   for (int i = 1; i < MAX_PROCESSES; i++)
+   {
+      if (!processTable[i].active)
+      {
+         processTable[i].thread = thread;
+         processTable[i].joinSem = new Semaphore("join semaphore", 0);
+         processTable[i].exitStatus = 0;
+         processTable[i].active = true;
+         return i;
+      }
+   }
+
+   return -1;
+}
 void NachOS_Exec()
 { // System call 2
    int addr = machine->ReadRegister(4);
@@ -136,9 +176,17 @@ void NachOS_Exec()
    strcpy(programName, filename);
 
    Thread *newThread = new Thread(programName);
+   int processId = RegisterProcess(newThread);
+   if (processId == -1)
+   {
+      delete[] programName;
+      delete newThread;
+      machine->WriteRegister(2, -1);
+      return;
+   }
    newThread->Fork(StartExecProcess, (void *)programName);
 
-   machine->WriteRegister(2, 1);
+   machine->WriteRegister(2, processId);
 }
 
 /*
@@ -146,6 +194,24 @@ void NachOS_Exec()
  */
 void NachOS_Join()
 { // System call 3
+   int processId = machine->ReadRegister(4);
+
+   if (processId <= 0 || processId >= MAX_PROCESSES || !processTable[processId].active)
+   {
+      machine->WriteRegister(2, -1);
+      return;
+   }
+
+   processTable[processId].joinSem->P();
+
+   int status = processTable[processId].exitStatus;
+
+   delete processTable[processId].joinSem;
+   processTable[processId].joinSem = NULL;
+   processTable[processId].thread = NULL;
+   processTable[processId].active = false;
+
+   machine->WriteRegister(2, status);
 }
 
 /*
@@ -574,6 +640,7 @@ void ExceptionHandler(ExceptionType which)
          break;
       case SC_Open: // System call # 5
          NachOS_Open();
+         AdvancePC();
          break;
       case SC_Read: // System call # 6
          NachOS_Read();

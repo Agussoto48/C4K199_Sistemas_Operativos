@@ -118,7 +118,6 @@ AddrSpace::AddrSpace(OpenFile *executable)
                                       // to run anything too big --
                                       // at least until we have
                                       // virtual memory
-    printf("AddrSpace necesita %d paginas, libres %d\n", numPages, memoryMap->NumClear());
     ASSERT((int)numPages <= memoryMap->NumClear());
 
     DEBUG('a', "Initializing address space, num pages %d, size %d\n", numPages, size);
