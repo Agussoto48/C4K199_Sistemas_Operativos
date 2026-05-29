@@ -206,9 +206,9 @@ int CondBroadcast( Cond_t condId, Lock_t lockId );
  *  NachOS sockets system call family
  */
 typedef int Socket_t;
-#define AF_INET_NachOS		0
-#define AF_INET6_NachOS		1
-#define SOCK_STREAM_NachOS	0
+#define AF_INET_NachOS		2
+#define AF_INET6_NachOS		10
+#define SOCK_STREAM_NachOS	1
 #define SOCK_DGRAM_NachOS	1
 
 /* Socket creates a Unix socket

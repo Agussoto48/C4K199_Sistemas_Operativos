@@ -36,7 +36,7 @@
 #include "synch.h"
 #include "NachosOpenFilesTable.h"
 
-#define SC_NachOS 015177
+#define SC_NachOS 015200
 #define MAX_PROCESSES 32
 
 NachosOpenFilesTable *openFilesTable = new NachosOpenFilesTable();
@@ -248,7 +248,7 @@ void NachOS_Read()
       else
       {
          bytesRead = recv(file, buffer, size, 0);
-         if (bytesRead > 0)
+         if (bytesRead < 0)
          {
             delete[] buffer;
             machine->WriteRegister(2, -1);
