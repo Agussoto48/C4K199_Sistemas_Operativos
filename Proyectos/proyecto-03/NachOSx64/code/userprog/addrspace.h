@@ -16,7 +16,10 @@
 #include "copyright.h"
 #include "filesys.h"
 
-#define UserStackSize 1024 // increase this as necessary!
+struct noffHeader;
+typedef struct noffHeader NoffHeader;
+
+#define UserStackSize 8192 // increase this as necessary!
 
 class AddrSpace
 {
@@ -32,12 +35,20 @@ public:
   void SaveState();    // Save/restore address space-specific
   void RestoreState(); // info on a context switch
 
+  #ifdef VM
+  void HandlePageFault(int virtualPage);
+  #endif
 private:
   TranslationEntry *pageTable; // Assume linear page table translation
                                // for now!
   unsigned int numPages;       // Number of pages in the virtual
                                // address space
   bool *ownedPages;
+
+  #ifdef VM
+  OpenFile *executableFile;
+  NoffHeader *noffHeader;
+  #endif
 };
 
 #endif // ADDRSPACE_H

@@ -699,6 +699,15 @@ void ExceptionHandler(ExceptionType which)
 
    case PageFaultException:
    {
+      // Obtiene la dirección virtual que produjo el fallo
+      int badAddress = machine->ReadRegister(BadVAddrReg);
+
+      // Calcula la página virtual correspondiente
+      int virtualPage = badAddress / PageSize;
+
+      // Solicita al espacio de direcciones cargar la página
+      currentThread->space->HandlePageFault(virtualPage);
+
       break;
    }
 
@@ -783,9 +792,11 @@ void StartExecProcess(void *arg)
 
    currentThread->space = new AddrSpace(executable);
 
+#ifndef VM
    delete executable;
+#endif
    delete[] filename;
-
+   
    currentThread->space->InitRegisters();
    currentThread->space->RestoreState();
 
