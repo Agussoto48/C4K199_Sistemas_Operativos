@@ -21,6 +21,31 @@
 #include "noff.h"
 #include "bitmap.h"
 
+#ifdef VM
+struct PhysicalPageInfo
+{
+    AddrSpace *owner;
+    int virtualPage;
+};
+
+static PhysicalPageInfo physicalPageTable[NumPhysPages];
+static bool physicalPageTableInitialized = false;
+
+static void InitPhysicalPageTable()
+{
+    if (!physicalPageTableInitialized)
+    {
+        for (int i = 0; i < NumPhysPages; i++)
+        {
+            physicalPageTable[i].owner = NULL;
+            physicalPageTable[i].virtualPage = -1;
+        }
+
+        physicalPageTableInitialized = true;
+    }
+}
+#endif
+
 //----------------------------------------------------------------------
 // SwapHeader
 // 	Do little endian to big endian conversion on the bytes in the
@@ -113,6 +138,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
     ASSERT(noffH.noffMagic == NOFFMAGIC);
 
 #ifdef VM
+    InitPhysicalPageTable();
     this->executableFile = executable;
     this->noffHeader = new NoffHeader;
     *(this->noffHeader) = noffH;
@@ -135,6 +161,21 @@ AddrSpace::AddrSpace(OpenFile *executable)
 
     pageTable = new TranslationEntry[numPages];
     ownedPages = new bool[numPages];
+
+#ifdef VM
+    inSwap = new bool[numPages];
+    swapLocation = new int[numPages];
+
+    for (i = 0; i < numPages; i++)
+    {
+        inSwap[i] = false;
+        swapLocation[i] = -1;
+    }
+
+    fileSystem->Create("SWAP", 64 * PageSize);
+    swapFile = fileSystem->Open("SWAP");
+    ASSERT(swapFile != NULL);
+#endif
 
     for (i = 0; i < numPages; i++)
     {
@@ -207,7 +248,6 @@ AddrSpace::AddrSpace(AddrSpace *parent)
         if ((int)i >= firstStackPage)
         {
             int physicalPage = memoryMap->Find();
-
             ASSERT(physicalPage != -1);
 
             pageTable[i].physicalPage = physicalPage;
@@ -308,64 +348,67 @@ void AddrSpace::HandlePageFault(int virtualPage)
     ASSERT(virtualPage >= 0 && virtualPage < (int)numPages);
 
     // busca un marco físico libe donde cargar la página
-    int physicalPage = memoryMap->Find();
-
-    // si no hay memoria libre, el sistema se detiene
-    ASSERT(physicalPage != -1);
+    int physicalPage = GetFreePage();
 
     int physicalAddr = physicalPage * PageSize;
 
     bzero(&(machine->mainMemory[physicalAddr]), PageSize);
 
-    int virtualAddr = virtualPage * PageSize;
-
-    // Carga la parte de código si la página virtual contiene código
-    if (noffHeader->code.size > 0)
+    if (inSwap[virtualPage])
     {
-        int codeStart = noffHeader->code.virtualAddr;
-        int codeEnd = codeStart + noffHeader->code.size;
+        ReadPageFromSwap(virtualPage, physicalPage);
+    }
+    else
+    {
+        int virtualAddr = virtualPage * PageSize;
 
-        int pageStart = virtualAddr;
-        int pageEnd = virtualAddr + PageSize;
-
-        // revisa si esta página contiene parte del código
-        int start = pageStart > codeStart ? pageStart : codeStart;
-        int end = pageEnd < codeEnd ? pageEnd : codeEnd;
-
-        if (start < end)
+        // Carga la parte de código si la página virtual contiene código
+        if (noffHeader->code.size > 0)
         {
-            int bytesToRead = end - start;
-            int offsetInPage = start - pageStart;
-            int offsetInFile = noffHeader->code.inFileAddr + (start - codeStart);
+            int codeStart = noffHeader->code.virtualAddr;
+            int codeEnd = codeStart + noffHeader->code.size;
 
-            executableFile->ReadAt(
-                &(machine->mainMemory[physicalAddr + offsetInPage]), bytesToRead, offsetInFile);
+            int pageStart = virtualAddr;
+            int pageEnd = virtualAddr + PageSize;
+
+            // revisa si esta página contiene parte del código
+            int start = pageStart > codeStart ? pageStart : codeStart;
+            int end = pageEnd < codeEnd ? pageEnd : codeEnd;
+
+            if (start < end)
+            {
+                int bytesToRead = end - start;
+                int offsetInPage = start - pageStart;
+                int offsetInFile = noffHeader->code.inFileAddr + (start - codeStart);
+
+                executableFile->ReadAt(
+                    &(machine->mainMemory[physicalAddr + offsetInPage]), bytesToRead, offsetInFile);
+            }
+        }
+        // carga los datos inicializados
+        if (noffHeader->initData.size > 0)
+        {
+            int dataStart = noffHeader->initData.virtualAddr;
+            int dataEnd = dataStart + noffHeader->initData.size;
+
+            int pageStart = virtualAddr;
+            int pageEnd = virtualAddr + PageSize;
+
+            // Ve si esta página contiene parte de los datos inicializados
+            int start = pageStart > dataStart ? pageStart : dataStart;
+            int end = pageEnd < dataEnd ? pageEnd : dataEnd;
+
+            if (start < end)
+            {
+                int bytesToRead = end - start;
+                int offsetInPage = start - pageStart;
+                int offsetInFile = noffHeader->initData.inFileAddr + (start - dataStart);
+
+                executableFile->ReadAt(
+                    &(machine->mainMemory[physicalAddr + offsetInPage]), bytesToRead, offsetInFile);
+            }
         }
     }
-    // carga los datos inicializados
-    if (noffHeader->initData.size > 0)
-    {
-        int dataStart = noffHeader->initData.virtualAddr;
-        int dataEnd = dataStart + noffHeader->initData.size;
-
-        int pageStart = virtualAddr;
-        int pageEnd = virtualAddr + PageSize;
-
-        // Ve si esta página contiene parte de los datos inicializados
-        int start = pageStart > dataStart ? pageStart : dataStart;
-        int end = pageEnd < dataEnd ? pageEnd : dataEnd;
-
-        if (start < end)
-        {
-            int bytesToRead = end - start;
-            int offsetInPage = start - pageStart;
-            int offsetInFile = noffHeader->initData.inFileAddr + (start - dataStart);
-
-            executableFile->ReadAt(
-                &(machine->mainMemory[physicalAddr + offsetInPage]), bytesToRead, offsetInFile);
-        }
-    }
-
     // actualiza la page table para indicar que la página ya está en memoria
     pageTable[virtualPage].physicalPage = physicalPage;
     pageTable[virtualPage].valid = true;
@@ -374,5 +417,99 @@ void AddrSpace::HandlePageFault(int virtualPage)
     pageTable[virtualPage].readOnly = false;
 
     ownedPages[virtualPage] = true;
+    physicalPageTable[physicalPage].owner = this;
+    physicalPageTable[physicalPage].virtualPage = virtualPage;
 }
+#endif
+#ifdef VM
+int fifoVictim = 0;
+
+int AddrSpace::GetFreePage()
+{
+    // encontrar un espacio libre en memoria
+    int physicalPage = memoryMap->Find();
+
+    if (physicalPage != -1)
+    {
+        return physicalPage;
+    }
+
+    // Si no hay espacio libre se reemplaza una página
+    return ReplacePage();
+}
+
+int AddrSpace::ReplacePage()
+{
+    int victim = -1;
+
+    while (victim == -1)
+    {
+        int candidate = fifoVictim;
+        fifoVictim = (fifoVictim + 1) % NumPhysPages;
+
+        AddrSpace *candidateSpace = physicalPageTable[candidate].owner;
+        int candidateVirtualPage = physicalPageTable[candidate].virtualPage;
+
+        if (candidateSpace == NULL || candidateVirtualPage < 0)
+        {
+            continue;
+        }
+
+        // Usando la vara de second chance, que sii fue usada recientemente, se le da otra oportunidad
+        if (candidateSpace->pageTable[candidateVirtualPage].use)
+        {
+            candidateSpace->pageTable[candidateVirtualPage].use = false;
+            continue;
+        }
+
+        victim = candidate;
+    }
+
+    AddrSpace *victimSpace = physicalPageTable[victim].owner;
+    int victimVirtualPage = physicalPageTable[victim].virtualPage;
+
+    // Si la página fue modificada se guarda en SWAP
+    if (victimSpace->pageTable[victimVirtualPage].dirty)
+    {
+        victimSpace->WritePageToSwap(victimVirtualPage);
+    }
+
+    victimSpace->pageTable[victimVirtualPage].valid = false;
+    victimSpace->pageTable[victimVirtualPage].physicalPage = -1;
+    victimSpace->pageTable[victimVirtualPage].use = false;
+    victimSpace->pageTable[victimVirtualPage].dirty = false;
+    victimSpace->ownedPages[victimVirtualPage] = false;
+
+    physicalPageTable[victim].owner = NULL;
+    physicalPageTable[victim].virtualPage = -1;
+
+    return victim;
+}
+
+void AddrSpace::WritePageToSwap(int virtualPage)
+{
+    int physicalPage = pageTable[virtualPage].physicalPage;
+    int physicalAddr = physicalPage * PageSize;
+
+    if (!inSwap[virtualPage])
+    {
+        swapLocation[virtualPage] = virtualPage * PageSize;
+        inSwap[virtualPage] = true;
+    }
+
+    swapFile->WriteAt(&(machine->mainMemory[physicalAddr]), PageSize, swapLocation[virtualPage]);
+
+    stats->numDiskWrites++;
+}
+
+void AddrSpace::ReadPageFromSwap(int virtualPage, int physicalPage)
+{
+    int physicalAddr = physicalPage * PageSize;
+
+    swapFile->ReadAt(&(machine->mainMemory[physicalAddr]), PageSize, swapLocation[virtualPage]);
+    stats->numDiskReads++;
+
+    inSwap[virtualPage] = false;
+}
+
 #endif
