@@ -705,6 +705,7 @@ void ExceptionHandler(ExceptionType which)
       // Calcula la página virtual correspondiente
       int virtualPage = badAddress / PageSize;
 
+      stats->numPageFaults++;
       // Solicita al espacio de direcciones cargar la página
       currentThread->space->HandlePageFault(virtualPage);
 
@@ -796,7 +797,7 @@ void StartExecProcess(void *arg)
    delete executable;
 #endif
    delete[] filename;
-   
+
    currentThread->space->InitRegisters();
    currentThread->space->RestoreState();
 

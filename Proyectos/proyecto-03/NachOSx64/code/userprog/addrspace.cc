@@ -304,7 +304,6 @@ void AddrSpace::RestoreState()
 #ifdef VM
 void AddrSpace::HandlePageFault(int virtualPage)
 {
-    printf("Page Fault: VP %d\n", virtualPage);
     // Verifica que la página virtual solicitada exista dentro del espacio del proceso
     ASSERT(virtualPage >= 0 && virtualPage < (int)numPages);
 
@@ -339,15 +338,6 @@ void AddrSpace::HandlePageFault(int virtualPage)
             int offsetInPage = start - pageStart;
             int offsetInFile = noffHeader->code.inFileAddr + (start - codeStart);
 
-            printf("Code:\n");
-            printf("virtualPage = %d\n", virtualPage);
-            printf("physicalPage = %d\n", physicalPage);
-            printf("offsetInFile = %d\n", offsetInFile);
-            printf("bytesToRead = %d\n", bytesToRead);
-            printf("code.inFileAddr = %d\n", noffHeader->code.inFileAddr);
-            printf("code.virtualAddr = %d\n", noffHeader->code.virtualAddr);
-            printf("code.size = %d\n", noffHeader->code.size);
-
             executableFile->ReadAt(
                 &(machine->mainMemory[physicalAddr + offsetInPage]), bytesToRead, offsetInFile);
         }
@@ -371,14 +361,6 @@ void AddrSpace::HandlePageFault(int virtualPage)
             int offsetInPage = start - pageStart;
             int offsetInFile = noffHeader->initData.inFileAddr + (start - dataStart);
 
-            printf("Code:\n");
-            printf("virtualPage = %d\n", virtualPage);
-            printf("physicalPage = %d\n", physicalPage);
-            printf("offsetInFile = %d\n", offsetInFile);
-            printf("bytesToRead = %d\n", bytesToRead);
-            printf("code.inFileAddr = %d\n", noffHeader->code.inFileAddr);
-            printf("code.virtualAddr = %d\n", noffHeader->code.virtualAddr);
-            printf("code.size = %d\n", noffHeader->code.size);
             executableFile->ReadAt(
                 &(machine->mainMemory[physicalAddr + offsetInPage]), bytesToRead, offsetInFile);
         }
