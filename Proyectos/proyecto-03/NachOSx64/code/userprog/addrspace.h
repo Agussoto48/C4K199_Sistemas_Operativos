@@ -24,6 +24,8 @@ typedef struct noffHeader NoffHeader;
 class AddrSpace
 {
 public:
+  int referenceCount;
+
   AddrSpace(OpenFile *executable);
   AddrSpace(AddrSpace *parent);
   ~AddrSpace();

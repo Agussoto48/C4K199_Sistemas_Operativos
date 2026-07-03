@@ -126,6 +126,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
 {
     NoffHeader noffH;
     unsigned int i, size;
+    referenceCount = 1;
 
     executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
 
@@ -193,11 +194,15 @@ AddrSpace::AddrSpace(OpenFile *executable)
         pageTable[i].physicalPage = physicalPage;
         pageTable[i].valid = true;
         ownedPages[i] = true;
+
+        physicalPageTable[physicalPage].owner = this;
+        physicalPageTable[physicalPage].virtualPage = i;
 #endif
 
         pageTable[i].use = false;
         pageTable[i].dirty = false;
         pageTable[i].readOnly = false;
+        pageTable[i].lastUsed = 0;
     }
 
 #ifndef VM
@@ -234,6 +239,19 @@ AddrSpace::AddrSpace(OpenFile *executable)
 AddrSpace::AddrSpace(AddrSpace *parent)
 {
     numPages = parent->numPages;
+#ifdef VM
+    InitPhysicalPageTable();
+
+    executableFile = parent->executableFile;
+
+    noffHeader = new NoffHeader;
+    *noffHeader = *(parent->noffHeader);
+
+    swapFile = parent->swapFile;
+
+    inSwap = new bool[numPages];
+    swapLocation = new int[numPages];
+#endif
 
     this->pageTable = new TranslationEntry[numPages];
     this->ownedPages = new bool[numPages];
@@ -244,21 +262,71 @@ AddrSpace::AddrSpace(AddrSpace *parent)
     for (unsigned int i = 0; i < numPages; i++)
     {
         pageTable[i] = parent->pageTable[i];
+        ownedPages[i] = false;
 
-        if ((int)i >= firstStackPage)
+#ifdef VM
+        inSwap[i] = false;
+        swapLocation[i] = -1;
+
+        if (parent->pageTable[i].valid || parent->inSwap[i])
+        {
+            int physicalPage = GetFreePage();
+
+            pageTable[i].physicalPage = physicalPage;
+            pageTable[i].valid = true;
+            pageTable[i].use = true;
+            pageTable[i].dirty = false;
+            pageTable[i].lastUsed = stats->totalTicks;
+
+            ownedPages[i] = true;
+
+            physicalPageTable[physicalPage].owner = this;
+            physicalPageTable[physicalPage].virtualPage = i;
+
+            int childAddr = physicalPage * PageSize;
+
+            if (parent->pageTable[i].valid)
+            {
+                int parentAddr = parent->pageTable[i].physicalPage * PageSize;
+
+                bcopy(&(machine->mainMemory[parentAddr]),
+                      &(machine->mainMemory[childAddr]),
+                      PageSize);
+            }
+            else
+            {
+                parent->swapFile->ReadAt(&(machine->mainMemory[childAddr]), PageSize, parent->swapLocation[i]);
+                stats->numDiskReads++;
+            }
+        }
+        else
+        {
+            pageTable[i].physicalPage = -1;
+            pageTable[i].valid = false;
+            pageTable[i].use = false;
+            pageTable[i].dirty = false;
+            pageTable[i].lastUsed = 0;
+            ownedPages[i] = false;
+        }
+#else
+        if (parent->ownedPages[i])
         {
             int physicalPage = memoryMap->Find();
             ASSERT(physicalPage != -1);
 
             pageTable[i].physicalPage = physicalPage;
+            pageTable[i].valid = true;
             ownedPages[i] = true;
 
-            bzero(&(machine->mainMemory[physicalPage * PageSize]), PageSize);
+            bcopy(&(machine->mainMemory[parent->pageTable[i].physicalPage * PageSize]), &(machine->mainMemory[physicalPage * PageSize]), PageSize);
         }
         else
         {
+            pageTable[i].physicalPage = -1;
+            pageTable[i].valid = false;
             ownedPages[i] = false;
         }
+#endif
     }
 }
 //----------------------------------------------------------------------
@@ -273,7 +341,14 @@ AddrSpace::~AddrSpace()
     {
         if (ownedPages[i])
         {
+            int physicalPage = pageTable[i].physicalPage;
+
             memoryMap->Clear(pageTable[i].physicalPage);
+
+#ifdef VM
+            physicalPageTable[physicalPage].owner = NULL;
+            physicalPageTable[physicalPage].virtualPage = -1;
+#endif
         }
     }
     delete[] this->ownedPages;
@@ -281,6 +356,8 @@ AddrSpace::~AddrSpace()
 
 #ifdef VM
     delete noffHeader;
+    delete[] inSwap;
+    delete[] swapLocation;
 #endif
 }
 
@@ -415,6 +492,7 @@ void AddrSpace::HandlePageFault(int virtualPage)
     pageTable[virtualPage].use = true;
     pageTable[virtualPage].dirty = false;
     pageTable[virtualPage].readOnly = false;
+    pageTable[virtualPage].lastUsed = stats->totalTicks;
 
     ownedPages[virtualPage] = true;
     physicalPageTable[physicalPage].owner = this;
@@ -422,7 +500,6 @@ void AddrSpace::HandlePageFault(int virtualPage)
 }
 #endif
 #ifdef VM
-int fifoVictim = 0;
 
 int AddrSpace::GetFreePage()
 {
@@ -441,34 +518,33 @@ int AddrSpace::GetFreePage()
 int AddrSpace::ReplacePage()
 {
     int victim = -1;
+    int oldestTime = 0;
 
-    while (victim == -1)
+    for (int i = 0; i < NumPhysPages; i++)
     {
-        int candidate = fifoVictim;
-        fifoVictim = (fifoVictim + 1) % NumPhysPages;
-
-        AddrSpace *candidateSpace = physicalPageTable[candidate].owner;
-        int candidateVirtualPage = physicalPageTable[candidate].virtualPage;
+        AddrSpace *candidateSpace = physicalPageTable[i].owner;
+        int candidateVirtualPage = physicalPageTable[i].virtualPage;
 
         if (candidateSpace == NULL || candidateVirtualPage < 0)
         {
             continue;
         }
 
-        // Usando la vara de second chance, que sii fue usada recientemente, se le da otra oportunidad
-        if (candidateSpace->pageTable[candidateVirtualPage].use)
-        {
-            candidateSpace->pageTable[candidateVirtualPage].use = false;
-            continue;
-        }
+        int candidateTime =
+            candidateSpace->pageTable[candidateVirtualPage].lastUsed;
 
-        victim = candidate;
+        if (victim == -1 || candidateTime < oldestTime)
+        {
+            victim = i;
+            oldestTime = candidateTime;
+        }
     }
+
+    ASSERT(victim != -1);
 
     AddrSpace *victimSpace = physicalPageTable[victim].owner;
     int victimVirtualPage = physicalPageTable[victim].virtualPage;
 
-    // Si la página fue modificada se guarda en SWAP
     if (victimSpace->pageTable[victimVirtualPage].dirty)
     {
         victimSpace->WritePageToSwap(victimVirtualPage);
@@ -478,6 +554,7 @@ int AddrSpace::ReplacePage()
     victimSpace->pageTable[victimVirtualPage].physicalPage = -1;
     victimSpace->pageTable[victimVirtualPage].use = false;
     victimSpace->pageTable[victimVirtualPage].dirty = false;
+    victimSpace->pageTable[victimVirtualPage].lastUsed = 0;
     victimSpace->ownedPages[victimVirtualPage] = false;
 
     physicalPageTable[victim].owner = NULL;

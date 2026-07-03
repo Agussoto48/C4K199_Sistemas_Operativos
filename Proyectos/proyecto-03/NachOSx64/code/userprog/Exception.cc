@@ -90,7 +90,13 @@ void NachOS_Exit()
 
    if (currentThread->space != NULL)
    {
-      delete currentThread->space;
+      currentThread->space->referenceCount--;
+
+      if (currentThread->space->referenceCount == 0)
+      {
+         delete currentThread->space;
+      }
+
       currentThread->space = NULL;
    }
    // Finaliza el hilo actual.
@@ -364,7 +370,8 @@ void NachOS_Fork()
    int addr = machine->ReadRegister(4);
 
    Thread *child = new Thread("Fork child");
-   child->space = new AddrSpace(currentThread->space);
+   child->space = currentThread->space;
+   child->space->referenceCount++;
    child->Fork(NachOSForkThread, (void *)addr);
 
    machine->WriteRegister(2, 0);
@@ -757,8 +764,11 @@ bool ReadStringFromUser(int addr, char *buffer, int maxSize)
    {
       if (!machine->ReadMem(addr + i, 1, &value))
       {
-         buffer[0] = '\0';
-         return false;
+         if (!machine->ReadMem(addr + i, 1, &value))
+         {
+            buffer[0] = '\0';
+            return false;
+         }
       }
 
       buffer[i] = (char)value;
