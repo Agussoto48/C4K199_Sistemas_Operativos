@@ -256,9 +256,6 @@ AddrSpace::AddrSpace(AddrSpace *parent)
     this->pageTable = new TranslationEntry[numPages];
     this->ownedPages = new bool[numPages];
 
-    int stackPages = divRoundUp(UserStackSize, PageSize);
-    int firstStackPage = numPages - stackPages;
-
     for (unsigned int i = 0; i < numPages; i++)
     {
         pageTable[i] = parent->pageTable[i];
@@ -537,9 +534,9 @@ void AddrSpace::HandlePageFault(int virtualPage)
 #endif
 #ifdef VM
 
+// Busca una página libre en memoria y si no hay espacio llama al reemplazo de páginas.
 int AddrSpace::GetFreePage()
 {
-    // encontrar un espacio libre en memoria
     int physicalPage = memoryMap->Find();
 
     if (physicalPage != -1)
@@ -547,10 +544,10 @@ int AddrSpace::GetFreePage()
         return physicalPage;
     }
 
-    // Si no hay espacio libre se reemplaza una página
     return ReplacePage();
 }
 
+// Escoge una página para sacarla de memoria y se usa LRU
 int AddrSpace::ReplacePage()
 {
 #ifdef USE_TLB
@@ -574,7 +571,7 @@ int AddrSpace::ReplacePage()
     }
 #endif
     int victim = -1;
-    int oldestTime = 0;
+    int mas_viejo = 0;
 
     for (int i = 0; i < NumPhysPages; i++)
     {
@@ -586,10 +583,10 @@ int AddrSpace::ReplacePage()
 
         int candidateTime = candidateSpace->pageTable[candidateVirtualPage].lastUsed;
 
-        if (victim == -1 || candidateTime < oldestTime)
+        if (victim == -1 || candidateTime < mas_viejo)
         {
             victim = i;
-            oldestTime = candidateTime;
+            mas_viejo = candidateTime;
         }
     }
 
@@ -631,6 +628,7 @@ int AddrSpace::ReplacePage()
     return victim;
 }
 
+// Guarda una página en el archivo SWAP.
 void AddrSpace::WritePageToSwap(int virtualPage)
 {
     int physicalPage = pageTable[virtualPage].physicalPage;
@@ -646,6 +644,7 @@ void AddrSpace::WritePageToSwap(int virtualPage)
     stats->numDiskWrites++;
 }
 
+// Recupera una página desde el archivo SWAP.
 void AddrSpace::ReadPageFromSwap(int virtualPage, int physicalPage)
 {
     int physicalAddr = physicalPage * PageSize;
@@ -666,8 +665,7 @@ bool AddrSpace::IsPageValid(int virtualPage)
     return pageTable[virtualPage].valid;
 }
 
-// Actualiza la TLB cuando la traducción no está cargada.
-// Usa LRU para reemplazar la entrada menos usada recientemente.
+// Actualiza la TLB cuando la traducción no está cargada y usa LRU
 void AddrSpace::UpdateTLB(int virtualPage)
 {
     ASSERT(pageTable[virtualPage].valid);
@@ -700,7 +698,7 @@ void AddrSpace::UpdateTLB(int virtualPage)
         }
     }
 
-    // Antes de reemplazar, guarda los bits importantes en la page table
+    // Antes de reemplazar guarda los bits importantes en la page table
     if (machine->tlb[victim].valid)
     {
         int pagina_anterior = machine->tlb[victim].virtualPage;
