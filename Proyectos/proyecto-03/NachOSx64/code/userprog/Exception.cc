@@ -267,9 +267,12 @@ void NachOS_Read()
    {
       if (!machine->WriteMem(addr + i, 1, buffer[i]))
       {
-         delete[] buffer;
-         machine->WriteRegister(2, -1);
-         return;
+         if (!machine->WriteMem(addr + i, 1, buffer[i]))
+         {
+            delete[] buffer;
+            machine->WriteRegister(2, -1);
+            return;
+         }
       }
    }
 
@@ -302,9 +305,12 @@ void NachOS_Write()
       // Algun error al leer
       if (!machine->ReadMem(addr + i, 1, &value))
       {
-         delete[] buffer;
-         machine->WriteRegister(2, -1);
-         return;
+         if (!machine->ReadMem(addr + i, 1, &value))
+         {
+            delete[] buffer;
+            machine->WriteRegister(2, -1);
+            return;
+         }
       }
 
       buffer[i] = (char)value;
