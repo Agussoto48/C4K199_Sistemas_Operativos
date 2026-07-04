@@ -39,6 +39,11 @@ public:
 #ifdef VM
   void HandlePageFault(int virtualPage);
 #endif
+#ifdef USE_TLB
+  bool IsPageValid(int virtualPage);
+  void UpdateTLB(int virtualPage);
+#endif
+
 private:
   TranslationEntry *pageTable; // Assume linear page table translation
                                // for now!

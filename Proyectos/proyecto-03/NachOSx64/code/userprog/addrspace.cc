@@ -402,6 +402,30 @@ void AddrSpace::InitRegisters()
 
 void AddrSpace::SaveState()
 {
+#ifdef USE_TLB
+    // Recorre todas las entradas de la TLB
+    for (int i = 0; i < TLBSize; i++)
+    {
+        if (machine->tlb[i].valid)
+        {
+            int pagina_virtual = machine->tlb[i].virtualPage;
+
+            if (pagina_virtual >= 0 && pagina_virtual < (int)numPages)
+            {
+                if (machine->tlb[i].use)
+                    pageTable[pagina_virtual].use = true;
+
+                if (machine->tlb[i].dirty)
+                    pageTable[pagina_virtual].dirty = true;
+
+                pageTable[pagina_virtual].lastUsed = machine->tlb[i].lastUsed;
+            }
+
+            // Invalida la entrada para el siguiente proceso
+            machine->tlb[i].valid = false;
+        }
+    }
+#endif
 }
 
 //----------------------------------------------------------------------
@@ -414,8 +438,20 @@ void AddrSpace::SaveState()
 
 void AddrSpace::RestoreState()
 {
+#ifdef USE_TLB
+    // Con TLB, la máquina no usa directamente la page table
+    machine->pageTable = NULL;
+    machine->pageTableSize = 0;
+
+    // Se limpia la TLB al cambiar/restaurar un proceso
+    for (int i = 0; i < TLBSize; i++)
+    {
+        machine->tlb[i].valid = false;
+    }
+#else
     machine->pageTable = pageTable;
     machine->pageTableSize = numPages;
+#endif
 }
 
 #ifdef VM
@@ -517,6 +553,26 @@ int AddrSpace::GetFreePage()
 
 int AddrSpace::ReplacePage()
 {
+#ifdef USE_TLB
+    for (int j = 0; j < TLBSize; j++)
+    {
+        if (machine->tlb[j].valid)
+        {
+            int pagina_virtual = machine->tlb[j].virtualPage;
+
+            if (pagina_virtual >= 0 && pagina_virtual < (int)numPages)
+            {
+                if (machine->tlb[j].use)
+                    pageTable[pagina_virtual].use = true;
+
+                if (machine->tlb[j].dirty)
+                    pageTable[pagina_virtual].dirty = true;
+
+                pageTable[pagina_virtual].lastUsed = machine->tlb[j].lastUsed;
+            }
+        }
+    }
+#endif
     int victim = -1;
     int oldestTime = 0;
 
@@ -526,12 +582,9 @@ int AddrSpace::ReplacePage()
         int candidateVirtualPage = physicalPageTable[i].virtualPage;
 
         if (candidateSpace == NULL || candidateVirtualPage < 0)
-        {
             continue;
-        }
 
-        int candidateTime =
-            candidateSpace->pageTable[candidateVirtualPage].lastUsed;
+        int candidateTime = candidateSpace->pageTable[candidateVirtualPage].lastUsed;
 
         if (victim == -1 || candidateTime < oldestTime)
         {
@@ -545,10 +598,25 @@ int AddrSpace::ReplacePage()
     AddrSpace *victimSpace = physicalPageTable[victim].owner;
     int victimVirtualPage = physicalPageTable[victim].virtualPage;
 
-    if (victimSpace->pageTable[victimVirtualPage].dirty)
+#ifdef USE_TLB
+    for (int j = 0; j < TLBSize; j++)
     {
-        victimSpace->WritePageToSwap(victimVirtualPage);
+        if (machine->tlb[j].valid && machine->tlb[j].virtualPage == victimVirtualPage)
+        {
+            if (machine->tlb[j].use)
+                victimSpace->pageTable[victimVirtualPage].use = true;
+
+            if (machine->tlb[j].dirty)
+                victimSpace->pageTable[victimVirtualPage].dirty = true;
+
+            victimSpace->pageTable[victimVirtualPage].lastUsed = machine->tlb[j].lastUsed;
+            machine->tlb[j].valid = false;
+        }
     }
+#endif
+
+    if (victimSpace->pageTable[victimVirtualPage].dirty)
+        victimSpace->WritePageToSwap(victimVirtualPage);
 
     victimSpace->pageTable[victimVirtualPage].valid = false;
     victimSpace->pageTable[victimVirtualPage].physicalPage = -1;
@@ -575,7 +643,6 @@ void AddrSpace::WritePageToSwap(int virtualPage)
     }
 
     swapFile->WriteAt(&(machine->mainMemory[physicalAddr]), PageSize, swapLocation[virtualPage]);
-
     stats->numDiskWrites++;
 }
 
@@ -589,4 +656,70 @@ void AddrSpace::ReadPageFromSwap(int virtualPage, int physicalPage)
     inSwap[virtualPage] = false;
 }
 
+#endif
+
+#ifdef USE_TLB
+
+// Indica si una página virtual ya se encuentra cargada en memoria.
+bool AddrSpace::IsPageValid(int virtualPage)
+{
+    return pageTable[virtualPage].valid;
+}
+
+// Actualiza la TLB cuando la traducción no está cargada.
+// Usa LRU para reemplazar la entrada menos usada recientemente.
+void AddrSpace::UpdateTLB(int virtualPage)
+{
+    ASSERT(pageTable[virtualPage].valid);
+
+    int victim = -1;
+    int mas_viejo = 0;
+
+    // Primero busca una entrada libre en la TLB
+    for (int i = 0; i < TLBSize; i++)
+    {
+        if (!machine->tlb[i].valid)
+        {
+            victim = i;
+            break;
+        }
+    }
+
+    // Si no hay entradas libres busca la menos usada recientemente
+    if (victim == -1)
+    {
+        for (int i = 0; i < TLBSize; i++)
+        {
+            int tiempo_actual = machine->tlb[i].lastUsed;
+
+            if (victim == -1 || tiempo_actual < mas_viejo)
+            {
+                victim = i;
+                mas_viejo = tiempo_actual;
+            }
+        }
+    }
+
+    // Antes de reemplazar, guarda los bits importantes en la page table
+    if (machine->tlb[victim].valid)
+    {
+        int pagina_anterior = machine->tlb[victim].virtualPage;
+
+        if (pagina_anterior >= 0 && pagina_anterior < (int)numPages)
+        {
+            if (machine->tlb[victim].use)
+                pageTable[pagina_anterior].use = true;
+
+            if (machine->tlb[victim].dirty)
+                pageTable[pagina_anterior].dirty = true;
+
+            pageTable[pagina_anterior].lastUsed = machine->tlb[victim].lastUsed;
+        }
+    }
+
+    // Carga la nueva traducción en la TLB
+    machine->tlb[victim] = pageTable[virtualPage];
+    machine->tlb[victim].valid = true;
+    machine->tlb[victim].lastUsed = stats->totalTicks;
+}
 #endif

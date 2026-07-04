@@ -706,15 +706,20 @@ void ExceptionHandler(ExceptionType which)
 
    case PageFaultException:
    {
-      // Obtiene la dirección virtual que produjo el fallo
       int badAddress = machine->ReadRegister(BadVAddrReg);
-
-      // Calcula la página virtual correspondiente
       int virtualPage = badAddress / PageSize;
 
       stats->numPageFaults++;
-      // Solicita al espacio de direcciones cargar la página
+
+#ifdef USE_TLB
+      if (!currentThread->space->IsPageValid(virtualPage))
+         currentThread->space->HandlePageFault(virtualPage);
+
+      if (currentThread->space->IsPageValid(virtualPage))
+         currentThread->space->UpdateTLB(virtualPage);
+#else
       currentThread->space->HandlePageFault(virtualPage);
+#endif
 
       break;
    }
